@@ -59,7 +59,7 @@ st.set_page_config(
 # ---------------------------------------------------------------------------
 # R2 / Production remote data
 # ---------------------------------------------------------------------------
-R2_BASE_URL = os.environ.get("R2_BASE_URL", "").rstrip("/")
+R2_BASE_URL = os.environ.get("R2_BASE_URL", "").strip().rstrip("/")
 _R2_MODE    = bool(R2_BASE_URL)
 
 
@@ -4577,16 +4577,19 @@ def _render_efficiency_frontier():
     from statsmodels.nonparametric.smoothers_lowess import lowess as _sm_lowess
 
     # ── data path ────────────────────────────────────────────────────────────
-    if not os.path.exists(_DEFAULT_CONFIG):
-        st.warning("Config file not found — cannot load player data for frontier analysis.")
-        return
-    _bcfg     = _load_base_config(_DEFAULT_CONFIG)
-    _sal_abs  = _resolve_data_path(_bcfg["raw_salary_war_path"], _DEFAULT_CONFIG)
-    _data_dir = os.path.dirname(_sal_abs)
-    _cpath    = os.path.join(_data_dir, "mlb_combined_2021_2025.csv")
-    if not os.path.exists(_cpath):
-        st.warning(f"Combined data file not found: `{_cpath}`")
-        return
+    if _R2_MODE:
+        _cpath = _data_url("data/mlb_combined_2021_2025.csv")
+    else:
+        if not os.path.exists(_DEFAULT_CONFIG):
+            st.warning("Config file not found — cannot load player data for frontier analysis.")
+            return
+        _bcfg     = _load_base_config(_DEFAULT_CONFIG)
+        _sal_abs  = _resolve_data_path(_bcfg["raw_salary_war_path"], _DEFAULT_CONFIG)
+        _data_dir = os.path.dirname(_sal_abs)
+        _cpath    = os.path.join(_data_dir, "mlb_combined_2021_2025.csv")
+        if not os.path.exists(_cpath):
+            st.warning(f"Combined data file not found: `{_cpath}`")
+            return
 
     # ── cached load ───────────────────────────────────────────────────────────
     @st.cache_data(show_spinner=False)
