@@ -56,6 +56,15 @@ st.set_page_config(
     initial_sidebar_state="auto",
 )
 
+# Override Streamlit's default meta tags for link previews (iOS, iMessage, etc.)
+st.markdown(
+    """<meta property="og:title" content="MLB Toolbox" />
+<meta property="og:site_name" content="MLB Toolbox" />
+<meta property="og:description" content="Data-driven baseball analysis" />
+<meta name="apple-mobile-web-app-title" content="MLB Toolbox" />""",
+    unsafe_allow_html=True,
+)
+
 # ---------------------------------------------------------------------------
 # R2 / Production remote data
 # ---------------------------------------------------------------------------
@@ -1200,6 +1209,10 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         + _a('simulator', '🎮 Roster Simulator')
         + _a('rankings', '🏆 Rankings')
         + _a('league', '📉 League Analysis')
+        + '<a href="https://docs.google.com/forms/d/e/1FAIpQLSdexY0xhRoQt3F6LVJHdZ7z4_nHeZZIL7Bn8bFrIaqmsTb0Pw/viewform?usp=publish-editor" '
+        + 'target="_blank" style="color:#3b82f6;text-decoration:none;font-size:0.82rem;'
+        + 'padding:0.35rem 0.7rem;margin-left:0.5rem;border:1px solid #2e4a62;border-radius:6px;'
+        + 'white-space:nowrap;">Feedback</a>'
         + '</div>'
         + '<hr style="margin:0.4rem 0 1rem;border:none;border-top:1px solid #1e3250;">'
     )
