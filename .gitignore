@@ -1,0 +1,54 @@
+# ── Secrets & environment ───────────────────────────────────────────────────
+.env
+*.key
+*.pem
+
+# ── Data files — served from Cloudflare R2, not committed to git ────────────
+data/
+2026 Payroll/
+2026 Depth Chart/
+*.csv
+*.xlsx
+*.xls
+
+# ── Generated analysis outputs (also in R2) ──────────────────────────────────
+efficiency_scatter.png
+efficiency_ranking.png
+position_breakdown.png
+al_nl_ranking_table.csv
+efficiency_detail.csv
+
+# ── Headshots (large binary blobs — upload via upload_to_r2.py) ─────────────
+data/headshots/
+
+# ── Python build artifacts ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+
+# ── Virtual environments ─────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+ENV/
+
+# ── Optimizer run artifacts ──────────────────────────────────────────────────
+runs/
+
+# ── OS / editor noise ────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/settings.json
+
+# ── Streamlit local cache ────────────────────────────────────────────────────
+.streamlit/secrets.toml
