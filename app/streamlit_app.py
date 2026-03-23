@@ -42,8 +42,7 @@ from src.team_mode    import (
     build_offseason_scenario,
 )
 from src.depth_chart  import (
-    get_depth_chart_dir, load_projected_roster, load_minors_players,
-    TEAM_FILE_MAP as _DC_TEAM_FILE_MAP,
+    get_depth_chart_dir,
 )
 
 # ---------------------------------------------------------------------------
@@ -878,6 +877,17 @@ def _cached_razzball(razzball_path: str) -> pd.DataFrame:
         return pd.DataFrame()
     try:
         df = _read_csv(razzball_path, low_memory=False)
+        df.columns = [c.strip() for c in df.columns]
+        return df
+    except Exception:
+        return pd.DataFrame()
+
+
+@st.cache_data(show_spinner=False)
+def _cached_40man_roster(roster_path: str, fhash: str) -> pd.DataFrame:
+    """Load the 40-man roster CSV (from local file or R2 URL)."""
+    try:
+        df = _read_csv(roster_path, low_memory=False)
         df.columns = [c.strip() for c in df.columns]
         return df
     except Exception:
@@ -2540,6 +2550,10 @@ def _render_simulator_page():
             st.exception(e)
             return
 
+    # ── Load 40-man roster CSV ──────────────────────────────────────────────
+    _roster_40_path = _data_url("data/40man_rosters_2025.csv")
+    _roster_40 = _cached_40man_roster(_roster_40_path, _file_hash(_roster_40_path))
+
     df = df.copy()
     if "WAR_Total" in df.columns and "pos_group" in df.columns:
         df["WAR_Pct"] = (
@@ -2651,48 +2665,59 @@ def _render_simulator_page():
             _reset_btn = st.button("🔄 Reset", key="sim_reset_btn",
                                    type="secondary", use_container_width=True)
 
-    # Handle Load Roster
+    # Handle Load Roster — use 40-man roster CSV as source of truth
     if _load_btn:
         _tp = pd.DataFrame()
-        try:
-            _dc_dir = get_depth_chart_dir(data_dir)
-            if _dc_dir:
-                _dc_proj = load_projected_roster(_dc_dir, load_team)
-                _dc_min  = load_minors_players(_dc_dir, load_team, levels=("AAA",))
-                _dc_40   = _dc_min[_dc_min["on_40_man"]] if (
-                    not _dc_min.empty and "on_40_man" in _dc_min.columns
-                ) else pd.DataFrame()
-                _all_dc  = pd.concat([_dc_proj, _dc_40], ignore_index=True).drop_duplicates("Player")
-                if not _all_dc.empty:
-                    _lkp = df.set_index("Player") if not df.empty else pd.DataFrame()
-                    _rows = []
-                    for _, _dcr in _all_dc.iterrows():
-                        _nm = str(_dcr["Player"])
-                        if not _lkp.empty and _nm in _lkp.index:
-                            _pr = _lkp.loc[_nm].copy()
-                            if isinstance(_pr, pd.DataFrame):
-                                _pr = _pr.iloc[0]
-                            _rec = _pr.to_dict()
-                            _rec["Player"]   = _nm
-                            _rec["_dc_only"] = False
-                        else:
-                            _pr2 = str(_dcr.get("pos_raw", "UNK"))
-                            _rec = {
-                                "Player":      _nm,
-                                "Team":        load_team,
-                                "Position":    _pr2.split("/")[0] if "/" in _pr2 else _pr2,
-                                "pos_group":   _dcr.get("pos_group", "UNK"),
-                                "Salary_M":    0.74,
-                                "Stage_Clean": "Pre-Arb",
-                                "WAR_Total":   float("nan"),
-                                "W_per_M":     float("nan"),
-                                "PPR":         float("nan"),
-                                "_dc_only":    True,
-                            }
-                        _rows.append(_rec)
-                    _tp = pd.DataFrame(_rows)
-        except Exception:
-            pass
+        if not _roster_40.empty and "team" in _roster_40.columns:
+            # Filter 40-man roster to selected team
+            _r40_team = _roster_40[_roster_40["team"] == load_team].copy()
+            if not _r40_team.empty:
+                # Build a lookup from the payroll/combined DataFrame
+                _lkp = df.set_index("Player") if not df.empty else pd.DataFrame()
+                _rows = []
+                _matched = 0
+                _unmatched_names = []
+                for _, _r in _r40_team.iterrows():
+                    _nm = str(_r["full_name"])
+                    if not _lkp.empty and _nm in _lkp.index:
+                        _pr = _lkp.loc[_nm]
+                        if isinstance(_pr, pd.DataFrame):
+                            _pr = _pr.iloc[0]
+                        _rec = _pr.to_dict()
+                        _rec["Player"]   = _nm
+                        _rec["_dc_only"] = False
+                        _matched += 1
+                    else:
+                        # Player on 40-man but no stats — league minimum
+                        _pos = str(_r.get("position", "UNK"))
+                        _pg = ("SP" if _pos == "P" else
+                               "RP" if _pos in ("RP", "CL") else
+                               _pos if _pos in ("C", "1B", "2B", "3B", "SS", "LF", "CF", "RF", "DH") else
+                               "OF" if _pos in ("OF", "LF", "CF", "RF") else "UNK")
+                        _rec = {
+                            "Player":      _nm,
+                            "Team":        load_team,
+                            "Position":    _pos,
+                            "pos_group":   _pg,
+                            "Salary_M":    0.74,
+                            "Stage_Clean": "Pre-Arb",
+                            "WAR_Total":   float("nan"),
+                            "W_per_M":     float("nan"),
+                            "PPR":         float("nan"),
+                            "_dc_only":    True,
+                        }
+                        _unmatched_names.append(_nm)
+                    _rows.append(_rec)
+                _tp = pd.DataFrame(_rows)
+                # Store debug info for the debug expander
+                st.session_state["_sim_40man_debug"] = {
+                    "team": load_team,
+                    "total": len(_r40_team),
+                    "matched": _matched,
+                    "unmatched": len(_unmatched_names),
+                    "unmatched_names": _unmatched_names,
+                }
+        # Fallback: if 40-man CSV unavailable, use payroll/combined data
         if _tp.empty:
             _tp = df[df["Team"] == load_team].copy()
             _tp["_dc_only"] = False
@@ -2710,6 +2735,19 @@ def _render_simulator_page():
         for _k in ("sim_roster", "sim_roster_war", "sim_roster_cost"):
             st.session_state.pop(_k, None)
         st.rerun()
+
+    # ── Debug expander (only when ?debug=1) ──────────────────────────────────
+    if st.query_params.get("debug") == "1" and "_sim_40man_debug" in st.session_state:
+        _dbg = st.session_state["_sim_40man_debug"]
+        with st.expander("🔍 40-Man Roster Debug", expanded=True):
+            st.markdown(f"**Team:** {_dbg['team']}")
+            st.markdown(f"**Player count:** {_dbg['total']}  (must be <= 40)")
+            st.markdown(f"**Matched to stats CSV:** {_dbg['matched']}")
+            st.markdown(f"**No stats (league min):** {_dbg['unmatched']}")
+            if _dbg["unmatched_names"]:
+                st.markdown("**Unmatched player names:**")
+                for _un in _dbg["unmatched_names"]:
+                    st.markdown(f"- {_un}")
 
     # ── Filters ───────────────────────────────────────────────────────────────
     # Detect handedness columns (Bats for hitters, Throws for pitchers)
