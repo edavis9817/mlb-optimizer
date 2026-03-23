@@ -914,6 +914,55 @@ def _cached_razzball(razzball_path: str) -> pd.DataFrame:
 
 
 @st.cache_data(show_spinner=False)
+def _cached_mlbam_lookup(razzball_path: str) -> dict[str, str]:
+    """Build a dict mapping normalised player name → MLBAM ID string.
+
+    Uses First+Last columns if available, otherwise the Name column.
+    """
+    rz = _cached_razzball(razzball_path)
+    if rz.empty or "MLBAMID" not in rz.columns:
+        return {}
+    lookup: dict[str, str] = {}
+    if "First" in rz.columns and "Last" in rz.columns:
+        for _, row in rz.iterrows():
+            first = str(row.get("First", "")).strip()
+            last  = str(row.get("Last", "")).strip()
+            mid   = str(row["MLBAMID"]).strip()
+            if first and last and mid.isdigit():
+                key = _fix_player_name(f"{first} {last}")
+                lookup[key] = mid
+    if "Name" in rz.columns:
+        for _, row in rz.iterrows():
+            name = str(row.get("Name", "")).strip()
+            mid  = str(row["MLBAMID"]).strip()
+            if name and mid.isdigit():
+                key = _fix_player_name(name)
+                lookup.setdefault(key, mid)
+    return lookup
+
+
+def _headshot_url(mlbam_id: str, width: int = 56) -> str:
+    """Return the MLB static headshot URL for a given MLBAM ID."""
+    return (
+        "https://img.mlbstatic.com/mlb-photos/image/upload/"
+        f"d_people:generic:headshot:67:current.png/w_{width},q_auto:best"
+        f"/v1/people/{mlbam_id}/headshot/67/current"
+    )
+
+
+def _hover_img_tag(player_name: str, mlbam_map: dict[str, str]) -> str:
+    """Return an <img> tag for the player's headshot, or empty string."""
+    mid = mlbam_map.get(player_name, "")
+    if not mid:
+        return ""
+    url = _headshot_url(mid, width=56)
+    return (
+        f"<img src='{url}' width='56' height='56' "
+        f"style='border-radius:50%;vertical-align:middle;margin-right:6px;'>"
+    )
+
+
+@st.cache_data(show_spinner=False)
 def _cached_40man_roster(roster_path: str, fhash: str) -> pd.DataFrame:
     """Load the 40-man roster CSV (from local file or R2 URL)."""
     try:
@@ -1894,20 +1943,21 @@ def _render_player_card(player_name: str, combined_path: str, file_hash: str):
     # Stats
     # ------------------------------------------------------------------
     with stats_col:
-        st.markdown(f"#### {player_name}")
         st.markdown(
-            f"**{pos}** &nbsp;|&nbsp; {team} &nbsp;|&nbsp; "
-            f"Stage: **{stage}** &nbsp;|&nbsp; Age: **{age_str}** &nbsp;|&nbsp; "
-            f"{sal_label}: **{sal_str}** &nbsp;|&nbsp; "
-            f"Full Contract: **{ctrc_str}**",
-            unsafe_allow_html=True,
-        )
-        st.markdown(
+            f"<h4 style='margin:0 0 0.3rem;color:#d6e8f8;'>{player_name}</h4>"
+            f"<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.5rem;'>"
+            f"<b>{pos}</b> &nbsp;|&nbsp; {team} &nbsp;|&nbsp; "
+            f"Stage: <b>{stage}</b> &nbsp;|&nbsp; Age: <b>{age_str}</b> &nbsp;|&nbsp; "
+            f"{sal_label}: <b>{sal_str}</b> &nbsp;|&nbsp; "
+            f"Full Contract: <b>{ctrc_str}</b>"
+            f"</div>"
+            f"<div style='margin-bottom:0.3rem;'>"
             f"<span style='background:#1a3a1a;color:#2ecc71;padding:3px 10px;"
             f"border-radius:6px;font-size:0.85rem;font-weight:700;'>"
-            f"&#128200; Pay vs Play Ratio: {ppr_str}</span>"
+            f"&#x1F4C8; Pay vs Play Ratio: {ppr_str}</span>"
             f"<span style='color:#666;font-size:0.75rem;margin-left:8px;'>"
-            f"projected WAR over contract ÷ total contract $M</span>",
+            f"projected WAR over contract &divide; total contract $M</span>"
+            f"</div>",
             unsafe_allow_html=True,
         )
 
@@ -4946,6 +4996,9 @@ justify-content:space-between;gap:16px;">
   </div>
 </div>""", unsafe_allow_html=True)
 
+        # ── MLBAM ID map for headshot hover images ────────────────────────
+        _mlb_ids = _cached_mlbam_lookup(_RAZZBALL_PATH)
+
         # ── Tabs ──────────────────────────────────────────────────────────
         t1, t2, t3, t4, t5, t6, t7 = st.tabs([
             "Cost Effective Line",
@@ -5011,7 +5064,8 @@ justify-content:space-between;gap:16px;">
 
             # ── Chart ─────────────────────────────────────────────────────
             _hover = df.apply(lambda r: (
-                f"<b>{r['Player']}</b><br>"
+                _hover_img_tag(r['Player'], _mlb_ids)
+                + f"<b>{r['Player']}</b><br>"
                 + f"{r['Team']}  {r['Year']}<br>"
                 + f"WAR: {r['WAR_Total']:.1f}  |  Salary: ${r['Salary_M']:.2f}M<br>"
                 + f"Expected: ${r['predicted']:.2f}M<br>"
@@ -5465,7 +5519,8 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                 _pvp_df["_above"] = _pvp_df["residual"] <= 0  # below regression = underpaid
 
                 _pvp_hover = _pvp_df.apply(lambda r: (
-                    f"<b>{r['Player']}</b><br>"
+                    _hover_img_tag(r['Player'], _mlb_ids)
+                    + f"<b>{r['Player']}</b><br>"
                     + f"{r['Team']}  {r['Year']}<br>"
                     + f"WAR: {r['WAR_Total']:.1f}  Salary: ${r['Salary_M']:.2f}M<br>"
                     + f"PVP: {r['PVP']:.3f}  |  {r['Stage_Clean']}"
@@ -5583,7 +5638,8 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                     _p3["_above3"] = _p3["_resid3"] <= 0
 
                     _p3_hover = _p3.apply(lambda r: (
-                        f"<b>{r['Player']}</b><br>"
+                        _hover_img_tag(r['Player'], _mlb_ids)
+                        + f"<b>{r['Player']}</b><br>"
                         + f"{r['Team']}  ({int(r['Seasons'])} seasons)<br>"
                         + f"3yr WAR: {r['WAR3']:.1f}  |  3yr Salary: ${r['Sal3']:.1f}M<br>"
                         + f"PVP3: {r['PVP3']:.3f}  |  {r['Stage']}"
@@ -5707,7 +5763,8 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                     _p5["_above5"] = _p5["_resid5"] <= 0
 
                     _p5_hover = _p5.apply(lambda r: (
-                        f"<b>{r['Player']}</b><br>"
+                        _hover_img_tag(r['Player'], _mlb_ids)
+                        + f"<b>{r['Player']}</b><br>"
                         + f"{r['Team']}  ({int(r['Seasons'])} seasons)<br>"
                         + f"5yr WAR: {r['WAR5']:.1f}  |  5yr Salary: ${r['Sal5']:.1f}M<br>"
                         + f"PPEL5: {r['PVP5']:.3f}  |  {r['Stage']}"
