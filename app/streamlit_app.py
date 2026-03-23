@@ -1537,6 +1537,26 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
     display: none !important;
   }
 
+  /* ── League Analysis — header and summary cards on mobile ────── */
+  .ef-hdr {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    padding: 10px 12px !important;
+  }
+  .ef-hdr-stats {
+    justify-content: center !important;
+    gap: 6px !important;
+  }
+  .ef-hdr-stats > div {
+    flex: 1 1 auto !important;
+    min-width: 70px !important;
+    padding: 6px 8px !important;
+  }
+  .ef-summary-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+  }
+
   /* ── Issue 6 — Sticky bar safe area ────────────────────────────── */
   .mlb-sbar {
     padding-bottom: max(8px, env(safe-area-inset-bottom)) !important;
@@ -5287,10 +5307,10 @@ div[data-testid='column']:first-of-type .stSlider{
         _r2_txt   = f"R²={_mod.rsquared:.3f}" if _reg_method == "OLS" else _reg_lbl
 
         # ── Page header card ──────────────────────────────────────────────
-        st.markdown(f"""<div style="background:linear-gradient(135deg,#0f2035,#0d1b2a);border:1px solid #1e3a5c;
+        st.markdown(f"""<div class="ef-hdr" style="background:linear-gradient(135deg,#0f2035,#0d1b2a);border:1px solid #1e3a5c;
 border-radius:10px;padding:14px 18px;margin-bottom:14px;display:flex;align-items:center;
-justify-content:space-between;gap:16px;">
-  <div style="flex:1;min-width:0;">
+justify-content:space-between;gap:16px;flex-wrap:wrap;">
+  <div style="flex:1;min-width:200px;">
     <div style="font-size:18px;font-weight:800;color:#e8f4ff;margin-bottom:3px;">Cost Effective Line</div>
     <div style="font-size:11px;color:#5a8aaa;line-height:1.5;">
       Compare every player's actual salary against what the market would predict for their WAR —
@@ -5298,7 +5318,7 @@ justify-content:space-between;gap:16px;">
       dots <span style="color:#ef4444;font-weight:600;">above</span> are overpaid contracts.
     </div>
   </div>
-  <div style="display:flex;gap:10px;flex-shrink:0;">
+  <div class="ef-hdr-stats" style="display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;">
     <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 12px;text-align:center;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Players</div>
       <div style="font-size:18px;font-weight:700;color:#e8f4ff;">{_n_shown:,}</div>
@@ -5356,7 +5376,7 @@ justify-content:space-between;gap:16px;">
 
             st.markdown(f"""<div style="background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
   <div style="font-size:10px;font-weight:700;color:#5a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">PPEL Summary</div>
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
+  <div class="ef-summary-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
     <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Most Efficient Stage</div>
       <div style="font-size:15px;font-weight:700;color:#22c55e;">{_most_eff_stg}</div>
@@ -5382,8 +5402,7 @@ justify-content:space-between;gap:16px;">
 
             # ── Chart ─────────────────────────────────────────────────────
             _hover = df.apply(lambda r: (
-                _hover_img_tag(r['Player'], _mlb_ids)
-                + f"<b>{r['Player']}</b><br>"
+                f"<b>{r['Player']}</b><br>"
                 + f"{r['Team']}  {r['Year']}<br>"
                 + f"WAR: {r['WAR_Total']:.1f}  |  Salary: ${r['Salary_M']:.2f}M<br>"
                 + f"Expected: ${r['predicted']:.2f}M<br>"
@@ -5837,8 +5856,7 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                 _pvp_df["_above"] = _pvp_df["residual"] <= 0  # below regression = underpaid
 
                 _pvp_hover = _pvp_df.apply(lambda r: (
-                    _hover_img_tag(r['Player'], _mlb_ids)
-                    + f"<b>{r['Player']}</b><br>"
+                    f"<b>{r['Player']}</b><br>"
                     + f"{r['Team']}  {r['Year']}<br>"
                     + f"WAR: {r['WAR_Total']:.1f}  Salary: ${r['Salary_M']:.2f}M<br>"
                     + f"PVP: {r['PVP']:.3f}  |  {r['Stage_Clean']}"
@@ -5956,8 +5974,7 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                     _p3["_above3"] = _p3["_resid3"] <= 0
 
                     _p3_hover = _p3.apply(lambda r: (
-                        _hover_img_tag(r['Player'], _mlb_ids)
-                        + f"<b>{r['Player']}</b><br>"
+                        f"<b>{r['Player']}</b><br>"
                         + f"{r['Team']}  ({int(r['Seasons'])} seasons)<br>"
                         + f"3yr WAR: {r['WAR3']:.1f}  |  3yr Salary: ${r['Sal3']:.1f}M<br>"
                         + f"PVP3: {r['PVP3']:.3f}  |  {r['Stage']}"
@@ -6081,8 +6098,7 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                     _p5["_above5"] = _p5["_resid5"] <= 0
 
                     _p5_hover = _p5.apply(lambda r: (
-                        _hover_img_tag(r['Player'], _mlb_ids)
-                        + f"<b>{r['Player']}</b><br>"
+                        f"<b>{r['Player']}</b><br>"
                         + f"{r['Team']}  ({int(r['Seasons'])} seasons)<br>"
                         + f"5yr WAR: {r['WAR5']:.1f}  |  5yr Salary: ${r['Sal5']:.1f}M<br>"
                         + f"PPEL5: {r['PVP5']:.3f}  |  {r['Stage']}"
