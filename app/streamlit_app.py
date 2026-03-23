@@ -57,7 +57,8 @@ st.set_page_config(
 
 # Override Streamlit's default meta tags for link previews (iOS, iMessage, etc.)
 st.markdown(
-    """<meta property="og:title" content="MLB Toolbox" />
+    """<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<meta property="og:title" content="MLB Toolbox" />
 <meta property="og:site_name" content="MLB Toolbox" />
 <meta property="og:description" content="Data-driven baseball analysis" />
 <meta name="apple-mobile-web-app-title" content="MLB Toolbox" />""",
@@ -1307,11 +1308,138 @@ h1,h2,h3,h4,h5,h6 { color: #d6e8f8 !important; }
 button[data-testid="stMultiSelectClearButton"] { display: none !important; }
 [data-baseweb="clear-icon"]  { display: none !important; }
 [aria-label="Clear all"]     { display: none !important; }
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Tablet (≤1024px)
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .block-container { padding: 0.5rem 0.8rem !important; }
+  /* Stack 3+ column layouts into 2 columns */
+  [data-testid="stHorizontalBlock"] {
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+  }
+  [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+    min-width: 45% !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Mobile (≤768px)
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* ── Global spacing ────────────────────────────────────────────── */
+  .block-container {
+    padding: 0.3rem 0.5rem !important;
+    max-width: 100% !important;
+  }
+
+  /* ── Stack ALL st.columns vertically ───────────────────────────── */
+  [data-testid="stHorizontalBlock"] {
+    flex-direction: column !important;
+    gap: 0.4rem !important;
+  }
+  [data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+    width: 100% !important;
+    flex: 1 1 100% !important;
+    min-width: 100% !important;
+  }
+
+  /* ── Typography scale-down ─────────────────────────────────────── */
+  h1 { font-size: 1.4rem !important; }
+  h2 { font-size: 1.15rem !important; }
+  h3 { font-size: 1rem !important; }
+  h4 { font-size: 0.9rem !important; }
+
+  /* ── Metrics — compact ─────────────────────────────────────────── */
+  [data-testid="stMetric"] {
+    padding: 0.3rem 0.5rem !important;
+  }
+  [data-testid="stMetricLabel"] { font-size: 0.62rem !important; }
+  [data-testid="stMetricValue"] { font-size: 1rem !important; }
+
+  /* ── Tabs — scrollable ─────────────────────────────────────────── */
+  .stTabs [data-baseweb="tab-list"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap !important;
+  }
+  .stTabs [data-baseweb="tab-list"]::-webkit-scrollbar { display: none; }
+  .stTabs [data-baseweb="tab"] {
+    font-size: 0.72rem !important;
+    padding: 4px 10px !important;
+    flex-shrink: 0 !important;
+  }
+
+  /* ── Expanders — compact ───────────────────────────────────────── */
+  [data-testid="stExpander"] summary {
+    font-size: 0.78rem !important;
+    padding: 0.4rem 0.6rem !important;
+  }
+
+  /* ── Dataframes — horizontal scroll ────────────────────────────── */
+  [data-testid="stDataFrame"],
+  [data-testid="stDataEditor"] {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* ── Plotly charts — minimum height ────────────────────────────── */
+  [data-testid="stPlotlyChart"] {
+    min-height: 280px !important;
+  }
+
+  /* ── Buttons — full width on mobile ────────────────────────────── */
+  [data-testid="stButton"] > button,
+  [data-testid="stDownloadButton"] > button {
+    width: 100% !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* ── Sidebar — full-width overlay ──────────────────────────────── */
+  [data-testid="stSidebar"] {
+    min-width: 100vw !important;
+    max-width: 100vw !important;
+  }
+
+  /* ── Select / multiselect — full width ─────────────────────────── */
+  [data-baseweb="select"],
+  [data-baseweb="input"] {
+    min-width: 0 !important;
+  }
+
+  /* ── Nav bar — compact on mobile ───────────────────────────────── */
+  .mlb-nav {
+    justify-content: center !important;
+    gap: 0.2rem !important;
+    padding: 0.3rem 0 !important;
+  }
+  .mlb-nav a {
+    font-size: 0.75rem !important;
+    padding: 0.3rem 0.5rem !important;
+  }
+  .mlb-nav > span:nth-child(2),
+  .mlb-nav > span:nth-child(3) {
+    display: none !important;
+  }
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   RESPONSIVE — Small phone (≤480px)
+   ══════════════════════════════════════════════════════════════════════ */
+@media (max-width: 480px) {
+  .block-container { padding: 0.2rem 0.3rem !important; }
+  h1 { font-size: 1.2rem !important; }
+  h2 { font-size: 1rem !important; }
+  h3 { font-size: 0.88rem !important; }
+  [data-testid="stMetricValue"] { font-size: 0.88rem !important; }
+}
 </style>""", unsafe_allow_html=True)
 
     # ── Call 2: nav HTML only — no <style> block, no newlines, no indented lines ──
     nav = (
-        '<div style="display:flex;align-items:center;padding:0.5rem 0 0;flex-wrap:wrap;">'
+        '<div class="mlb-nav" style="display:flex;align-items:center;padding:0.5rem 0 0;flex-wrap:wrap;">'
         f'<a href="?page=home" target="_self" style="color:{bc};text-decoration:none;font-weight:900;'
         f'font-size:1.1rem;padding:0.3rem 0.8rem 0.3rem 0;white-space:nowrap;">&#9918; MLB Toolbox</a>'
         '<span style="color:#253d58;padding:0 0.5rem;line-height:1;">|</span>'
@@ -2209,6 +2337,47 @@ def _render_home_page():
         background: rgba(96,165,250,0.26);
         border-color: rgba(96,165,250,0.6);
         color: #dbeafe;
+    }
+
+    /* ── Home page — Tablet ──────────────────────────────────────── */
+    @media (max-width: 1024px) {
+        .h-grid { grid-template-columns: repeat(2, 1fr); max-width: 100%; }
+        .home-title-grad, .home-ball { font-size: 2.8rem; }
+        .home-fg { padding: 1.2rem 1rem 1.5rem; }
+        .cr-img  { width: 140px; height: 140px; }
+    }
+
+    /* ── Home page — Mobile ──────────────────────────────────────── */
+    @media (max-width: 768px) {
+        .home-wrap { min-height: auto; }
+        .home-fg {
+            min-height: auto;
+            padding: 2rem 0.8rem 1.5rem;
+            gap: 0.35rem;
+        }
+        .h-grid {
+            grid-template-columns: 1fr;
+            gap: 0.7rem;
+            max-width: 100%;
+            padding: 0 0.3rem;
+        }
+        .h-card { padding: 1rem 0.8rem 0.9rem; border-radius: 10px; }
+        .h-icon  { font-size: 1.8rem; }
+        .h-title { font-size: 0.85rem; }
+        .h-desc  { font-size: 0.68rem; }
+        .h-btn   { padding: 0.3rem 1rem; font-size: 0.72rem; }
+        .home-title-grad, .home-ball { font-size: 2.2rem; }
+        .home-sub { font-size: 0.68rem; letter-spacing: 0.15em; }
+        .home-rule { width: 80%; }
+        .home-cta { font-size: 0.65rem; }
+        .cr-img { width: 100px; height: 100px; margin: 0 4px; border-radius: 6px; }
+    }
+
+    /* ── Home page — Small phone ─────────────────────────────────── */
+    @media (max-width: 480px) {
+        .home-title-grad, .home-ball { font-size: 1.8rem; }
+        .home-sub { font-size: 0.6rem; }
+        .cr-img { width: 75px; height: 75px; }
     }
     </style>
     """, unsafe_allow_html=True)
