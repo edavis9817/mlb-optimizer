@@ -884,6 +884,16 @@ def _cached_razzball(razzball_path: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
+_CAROUSEL_PLAYERS = [
+    "Aaron Judge", "Shohei Ohtani", "Mookie Betts", "Juan Soto", "Freddie Freeman",
+    "Ronald Acuna Jr.", "Bryce Harper", "Mike Trout", "Trea Turner", "Corey Seager",
+    "Manny Machado", "Rafael Devers", "Julio Rodriguez", "Corbin Carroll", "Adley Rutschman",
+    "Bobby Witt Jr.", "Pete Alonso", "Yordan Alvarez", "Vladimir Guerrero Jr.", "Fernando Tatis Jr.",
+    "Marcus Semien", "Jose Ramirez", "Matt Olson", "Austin Riley", "Kyle Tucker",
+    "Elly De La Cruz", "Gunnar Henderson", "Wander Franco",
+]
+
+
 @st.cache_data(show_spinner=False)
 def _cached_carousel_images(headshots_dir: str, n: int = 28, seed: int = 42) -> list:
     """Load n random headshot PNGs as base64 strings for the landing page carousel."""
@@ -891,7 +901,20 @@ def _cached_carousel_images(headshots_dir: str, n: int = 28, seed: int = 42) -> 
     import base64
     rng = random.Random(seed)
     if headshots_dir.startswith("http"):
-        return []   # R2 mode: no directory listing available; carousel skipped
+        # R2 mode: fetch known player headshots via HTTP
+        if not _requests_available:
+            return []
+        result = []
+        players = list(_CAROUSEL_PLAYERS)
+        rng.shuffle(players)
+        for name in players[:n]:
+            try:
+                resp = _requests.get(f"{headshots_dir}/{name}.png", timeout=4)
+                if resp.status_code == 200:
+                    result.append(base64.b64encode(resp.content).decode())
+            except Exception:
+                continue
+        return result
     try:
         files = sorted(f for f in os.listdir(headshots_dir) if f.lower().endswith(".png"))
     except OSError:
@@ -1200,7 +1223,7 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
     # ── Call 2: nav HTML only — no <style> block, no newlines, no indented lines ──
     nav = (
         '<div style="display:flex;align-items:center;padding:0.5rem 0 0;flex-wrap:wrap;">'
-        f'<a href="?page=league" target="_self" style="color:{bc};text-decoration:none;font-weight:900;'
+        f'<a href="?page=home" target="_self" style="color:{bc};text-decoration:none;font-weight:900;'
         f'font-size:1.1rem;padding:0.3rem 0.8rem 0.3rem 0;white-space:nowrap;">&#9918; MLB Toolbox</a>'
         '<span style="color:#253d58;padding:0 0.5rem;line-height:1;">|</span>'
         '<span style="font-size:0.65rem;color:#2e4a62;text-transform:uppercase;'
@@ -1958,12 +1981,10 @@ def _render_home_page():
         ("simulator", "🎮", "Roster Simulator",
          "Browse every 2025 player. Build custom rosters, check position coverage, "
          "and analyse Pay vs Play value across contract durations."),
-        ("optimizer", "🔧", "Roster Optimizer",
-         "Budget-driven optimisation with archetypes and Monte Carlo win projections."),
-        ("team",      "🗓", "Team Planner",
-         "Model offseason moves and project WAR against budget for any franchise."),
+        ("rankings",  "🏆", "Rankings",
+         "Efficiency rankings, team benchmarking, and detailed player-level analysis."),
         ("league",    "📉", "League Analysis",
-         "League-wide efficiency rankings and market rate benchmarking."),
+         "League-wide spending efficiency, cost effective line, and market rate analysis."),
     ]
 
     # ------------------------------------------------------------------
@@ -2054,7 +2075,7 @@ def _render_home_page():
     /* card grid inside wrapper */
     .h-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(3, 1fr);
         gap: 1rem;
         width: 100%;
         margin-top: 0.5rem;
@@ -6922,11 +6943,11 @@ def _render_rankings_page():
 # ---------------------------------------------------------------------------
 
 def main():
-    _valid_pages = {"league", "simulator", "roster_optimizer", "rankings"}
+    _valid_pages = {"home", "league", "simulator", "roster_optimizer", "rankings"}
     if "page" not in st.session_state:
         # First load or browser refresh — restore from URL query param
-        qp = st.query_params.get("page", "league")
-        st.session_state["page"] = qp if qp in _valid_pages else "league"
+        qp = st.query_params.get("page", "home")
+        st.session_state["page"] = qp if qp in _valid_pages else "home"
 
     # Keep URL bar in sync with current page (no extra rerun)
     try:
@@ -6938,7 +6959,9 @@ def main():
 
     page = st.session_state.get("page", "league")
 
-    if page == "rankings":
+    if page == "home":
+        _render_home_page()
+    elif page == "rankings":
         _render_rankings_page()
     elif page == "league":
         _render_league_analysis()
