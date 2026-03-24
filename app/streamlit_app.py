@@ -1543,10 +1543,13 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
     -webkit-overflow-scrolling: touch;
   }
 
-  /* ── Issue 5 — Plotly charts fill width ────────────────────────── */
+  /* ── Issue 5 — Plotly charts fill width + disable touch zoom ──── */
   .js-plotly-plot { width: 100% !important; }
+  .js-plotly-plot .draglayer,
+  .js-plotly-plot .scrollbox { touch-action: pan-y !important; }
   [data-testid="stPlotlyChart"] {
     min-height: 280px !important;
+    touch-action: pan-y !important;
   }
 
   /* ── Issue 5 — Metrics compact ─────────────────────────────────── */
@@ -1699,7 +1702,7 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         '<span style="flex:1;"></span>'
         + _a('simulator', '🎮 Roster Simulator')
         + _a('rankings', '🏆 Rankings')
-        + _a('league', '📉 League Analysis')
+        + _a('league', '📊 Player Analysis')
         + _a('glossary', '📖 Glossary')
         + '<a href="https://docs.google.com/forms/d/e/1FAIpQLSdexY0xhRoQt3F6LVJHdZ7z4_nHeZZIL7Bn8bFrIaqmsTb0Pw/viewform?usp=publish-editor" '
         + 'target="_blank" style="color:#3b82f6;text-decoration:none;font-size:0.82rem;'
@@ -2451,7 +2454,7 @@ def _render_home_page():
         ("rankings",  "🏆", "Rankings",
          "All 30 teams ranked by efficiency, WAR, payroll, and win performance. "
          "See which franchises get the most wins per dollar and which are overspending."),
-        ("league",    "📉", "League Analysis",
+        ("league",    "📊", "Player Analysis",
          "Player-level cost effective line, PPEL regression, WAR stability ratings, "
          "and age trajectory analysis across 4,000+ player-seasons."),
         ("simulator", "🎮", "Roster Simulator",
@@ -5499,28 +5502,24 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
             _overpaid_n    = int((df["PPR"] > 1.0).sum())
 
             st.markdown(f"""<div style="background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
-  <div style="font-size:10px;font-weight:700;color:#5a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">PPEL Summary</div>
-  <div class="ef-summary-grid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;">
-      <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Most Efficient Stage</div>
-      <div style="font-size:15px;font-weight:700;color:#22c55e;">{_most_eff_stg}</div>
-      <div style="font-size:10px;color:#3a6a8a;margin-top:2px;">Median PPR {_most_eff_ppr:.2f}</div>
+  <div style="font-size:10px;font-weight:700;color:#5a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Career Stages Explained</div>
+  <div class="ef-summary-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+    <div style="background:#0d1b2a;border:1px solid #14532d;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:4px;">Pre-Arbitration</div>
+      <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">0–3 years service time. Salary near league minimum (~$740K). Teams control rights — often the best value in baseball.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;">
-      <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Least Efficient Stage</div>
-      <div style="font-size:15px;font-weight:700;color:#ef4444;">{_least_eff_stg}</div>
-      <div style="font-size:10px;color:#3a6a8a;margin-top:2px;">Median PPR {_least_eff_ppr:.2f}</div>
+    <div style="background:#0d1b2a;border:1px solid #b88840;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:4px;">Arbitration</div>
+      <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">3–6 years service time. Salary negotiated or set by arbitration hearing. Pay rises based on prior performance.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;">
-      <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Underpaid / Overpaid</div>
-      <div style="font-size:15px;font-weight:700;"><span style="color:#22c55e;">{_underpaid_n}</span> / <span style="color:#ef4444;">{_overpaid_n}</span></div>
-      <div style="font-size:10px;color:#3a6a8a;margin-top:2px;">PPR below / above 1.0</div>
+    <div style="background:#0d1b2a;border:1px solid #3b6fd4;border-radius:8px;padding:10px 12px;">
+      <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:4px;">Free Agent</div>
+      <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">6+ years service time. Player signs on the open market. Full market-rate salary — highest cost per WAR.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:10px 12px;">
-      <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Model Fit</div>
-      <div style="font-size:15px;font-weight:700;color:#e8f4ff;">{_r2_txt}</div>
-      <div style="font-size:10px;color:#3a6a8a;margin-top:2px;">PPEL ({_reg_method}) · N={_n_shown:,}</div>
-    </div>
+  </div>
+  <div style="display:flex;gap:16px;margin-top:10px;">
+    <div style="font-size:10px;color:#7a9ebc;"><span style="color:#22c55e;font-weight:700;">{_underpaid_n}</span> underpaid / <span style="color:#ef4444;font-weight:700;">{_overpaid_n}</span> overpaid (PPR vs 1.0)</div>
+    <div style="font-size:10px;color:#7a9ebc;">{_r2_txt} · {_reg_method} · N={_n_shown:,}</div>
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -6548,7 +6547,7 @@ def _render_league_analysis():
     import subprocess
 
     # ── Interactive player-level Cost Effective Line ─────────────────────────
-    st.markdown("### Player Cost Effective Line")
+    st.markdown("### Player Analysis")
     st.caption(
         "Interactive WAR vs Salary analysis for every player (2021–2025). "
         "Fit the PPEL regression line, colour by career stage or Pay-Performance Ratio, "
@@ -6556,9 +6555,11 @@ def _render_league_analysis():
     )
     _render_efficiency_frontier()
 
-    st.markdown("---")
+    _render_feedback_widget("league")
 
-    # ── Team-level spending efficiency (static / regenerate) ─────────────────
+
+# (Team-level league sections moved to /rankings page)
+if False:  # noqa: dead code preserved for reference
     if _R2_MODE:
         # In production, all analysis outputs are pre-built and served from R2
         analysis_dir  = None
@@ -7260,10 +7261,10 @@ def _render_rankings_page():
     # ── Page header ───────────────────────────────────────────────────────────
     st.markdown(
         "<div class='rk-hdr'>"
-        "<h2>🏆 League Rankings</h2>"
-        "<div class='rk-sub'>Who spends the most? Who gets the most wins per dollar? "
-        "Who is beating or missing their payroll expectations? All 30 teams ranked — "
-        "efficiency measures how far above or below the cost-effective line each team sits.</div>"
+        "<h2>🏆 MLB Efficiency Rankings</h2>"
+        "<div class='rk-sub'>All 30 teams ranked by spending efficiency, WAR production, "
+        "payroll, and win performance. Efficiency measures how far above or below the "
+        "cost-effective line each team sits — negative means winning more per dollar.</div>"
         "</div>",
         unsafe_allow_html=True,
     )
