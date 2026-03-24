@@ -1047,36 +1047,75 @@ def _cached_40man_roster(roster_path: str, fhash: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-_CAROUSEL_PLAYERS = [
-    "Aaron Judge", "Shohei Ohtani", "Mookie Betts", "Juan Soto", "Freddie Freeman",
-    "Ronald Acuna Jr.", "Bryce Harper", "Mike Trout", "Trea Turner", "Corey Seager",
-    "Manny Machado", "Rafael Devers", "Julio Rodriguez", "Corbin Carroll", "Adley Rutschman",
-    "Bobby Witt Jr.", "Pete Alonso", "Yordan Alvarez", "Vladimir Guerrero Jr.", "Fernando Tatis Jr.",
-    "Marcus Semien", "Jose Ramirez", "Matt Olson", "Austin Riley", "Kyle Tucker",
-    "Elly De La Cruz", "Gunnar Henderson", "Wander Franco",
-]
+@st.cache_data(show_spinner=False)
+def _build_carousel_players(combined_path: str) -> list[str]:
+    """Return top-3 WAR players per team from 2025, ensuring all 30 teams are represented.
+
+    Skips players whose headshot cannot be resolved (no MLBAM ID).
+    """
+    try:
+        df = _read_csv(combined_path, low_memory=False)
+        df.columns = [c.strip() for c in df.columns]
+        df["Year"] = pd.to_numeric(df["Year"], errors="coerce")
+        df["WAR_Total"] = pd.to_numeric(df.get("WAR_Total", pd.Series(dtype=float)), errors="coerce")
+        df25 = df[df["Year"] == 2025].dropna(subset=["WAR_Total", "Team", "Player"])
+
+        mlbam = _cached_mlbam_lookup(_RAZZBALL_PATH)
+
+        result = []
+        for _tm, grp in df25.groupby("Team"):
+            top = grp.sort_values("WAR_Total", ascending=False)
+            added = 0
+            for _, row in top.iterrows():
+                if added >= 3:
+                    break
+                pname = row["Player"]
+                if pname in mlbam:  # has a headshot
+                    result.append(pname)
+                    added += 1
+        return result
+    except Exception:
+        return []
 
 
 @st.cache_data(show_spinner=False)
-def _cached_carousel_images(headshots_dir: str, n: int = 28, seed: int = 42) -> list:
-    """Load n random headshot PNGs as base64 strings for the landing page carousel."""
+def _cached_carousel_images(headshots_dir: str, n: int = 90, seed: int = 42,
+                             player_list: tuple = ()) -> list:
+    """Load headshot PNGs as base64 strings for the landing page carousel.
+
+    Uses player_list if provided (top-3 WAR per team), otherwise falls back to
+    local directory listing.
+    """
     import random
     import base64
     rng = random.Random(seed)
-    if headshots_dir.startswith("http"):
-        # R2 mode: fetch known player headshots via HTTP
+
+    if player_list:
+        # Use the curated player list (all 30 teams represented)
         if not _requests_available:
             return []
-        result = []
-        players = list(_CAROUSEL_PLAYERS)
+        mlbam = _cached_mlbam_lookup(_RAZZBALL_PATH)
+        players = list(player_list)
         rng.shuffle(players)
+        result = []
         for name in players[:n]:
+            mid = mlbam.get(name)
+            if not mid:
+                continue
+            url = _headshot_url(mid, width=213)
             try:
-                resp = _requests.get(f"{headshots_dir}/{name}.png", timeout=4)
+                resp = _requests.get(url, timeout=4)
                 if resp.status_code == 200:
                     result.append(base64.b64encode(resp.content).decode())
             except Exception:
                 continue
+        return result
+
+    if headshots_dir.startswith("http"):
+        # R2 mode fallback: use MLBAM API with player list
+        if not _requests_available:
+            return []
+        result = []
         return result
     try:
         files = sorted(f for f in os.listdir(headshots_dir) if f.lower().endswith(".png"))
@@ -2409,15 +2448,18 @@ def _render_player_card(player_name: str, combined_path: str, file_hash: str):
 def _render_home_page():
     """Landing page: 3 faded carousel rows as background, feature cards in foreground."""
     _CARDS = [
-        ("simulator", "🎮", "Roster Simulator",
-         "Browse every 2025 player. Build custom rosters, check position coverage, "
-         "and analyse Pay vs Play value across contract durations."),
         ("rankings",  "🏆", "Rankings",
-         "Efficiency rankings, team benchmarking, and detailed player-level analysis."),
+         "All 30 teams ranked by efficiency, WAR, payroll, and win performance. "
+         "See which franchises get the most wins per dollar and which are overspending."),
         ("league",    "📉", "League Analysis",
-         "League-wide spending efficiency, cost effective line, and market rate analysis."),
+         "Player-level cost effective line, PPEL regression, WAR stability ratings, "
+         "and age trajectory analysis across 4,000+ player-seasons."),
+        ("simulator", "🎮", "Roster Simulator",
+         "Build custom MLB rosters from every 2025 player. Analyse position coverage, "
+         "contract health, Pay vs Play efficiency, and estimated win totals."),
         ("glossary",  "📖", "Glossary & Methodology",
-         "Every metric explained — WAR, PPEL, CBT, efficiency formulas and how we calculate them."),
+         "Every metric explained in detail — WAR, PPEL, CBT thresholds, WSR, "
+         "efficiency formulas, roster grades, and how we calculate each one."),
     ]
 
     # ------------------------------------------------------------------
@@ -2484,34 +2526,40 @@ def _render_home_page():
         background: linear-gradient(135deg, #60a5fa 0%, #93c5fd 50%, #dbeafe 100%);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         background-clip: text;
-        line-height: 1.0; letter-spacing: -2px;
-    }
-    /* baseball emoji — no gradient, natural colour */
-    .home-ball {
-        font-size: 3.8rem; line-height: 1.0;
-        -webkit-text-fill-color: initial;
+        line-height: 1.15; letter-spacing: -2px;
         vertical-align: middle;
     }
+    /* baseball emoji — no gradient, natural colour, vertically aligned */
+    .home-ball {
+        font-size: 3.8rem; line-height: 1.15;
+        -webkit-text-fill-color: initial;
+        vertical-align: middle;
+        margin-left: 0.15em;
+    }
     .home-sub {
-        font-size: 0.82rem; color: #3d6888; letter-spacing: 0.22em;
+        font-size: 0.88rem; color: #5a8aaa; letter-spacing: 0.22em;
         text-transform: uppercase; text-align: center;
+    }
+    .home-mission {
+        font-size: 0.82rem; color: #7a9ebc; text-align: center;
+        max-width: 680px; line-height: 1.7; margin: 0.3rem auto;
     }
     .home-rule {
         width: 52%; border: none;
-        border-top: 1px solid rgba(96,165,250,0.18); margin: 0.25rem 0;
+        border-top: 1px solid rgba(96,165,250,0.18); margin: 0.3rem 0;
     }
     .home-cta {
-        font-size: 0.75rem; color: #2e5570; letter-spacing: 0.14em;
-        text-transform: uppercase;
+        font-size: 0.8rem; color: #3d6888; letter-spacing: 0.14em;
+        text-transform: uppercase; margin-top: 0.3rem;
     }
     /* card grid inside wrapper */
     .h-grid {
         display: grid;
         grid-template-columns: repeat(4, 1fr);
-        gap: 1rem;
+        gap: 1.2rem;
         width: 100%;
-        max-width: 1100px;
-        margin-top: 0.5rem;
+        max-width: 1200px;
+        margin-top: 0.8rem;
     }
     .h-card {
         background: rgba(17, 25, 39, 0.88);
@@ -2519,10 +2567,10 @@ def _render_home_page():
         -webkit-backdrop-filter: blur(12px);
         border: 1px solid rgba(96,165,250,0.22);
         border-radius: 14px;
-        padding: 1.3rem 0.9rem 1.1rem;
+        padding: 1.5rem 1.1rem 1.3rem;
         text-align: center;
         display: flex; flex-direction: column;
-        align-items: center; gap: 0.4rem;
+        align-items: center; gap: 0.5rem;
         transition: border-color 0.2s, box-shadow 0.2s, transform 0.18s;
     }
     .h-card:hover {
@@ -2530,17 +2578,17 @@ def _render_home_page():
         box-shadow: 0 4px 22px rgba(96,165,250,0.14);
         transform: translateY(-2px);
     }
-    .h-icon  { font-size: 2.3rem; line-height: 1; }
-    .h-title { font-size: 0.93rem; font-weight: 700; color: #dbeafe; }
-    .h-desc  { font-size: 0.70rem; color: #3d6888; line-height: 1.5; flex: 1; }
+    .h-icon  { font-size: 2.6rem; line-height: 1; }
+    .h-title { font-size: 1.05rem; font-weight: 700; color: #dbeafe; }
+    .h-desc  { font-size: 0.78rem; color: #5a8aaa; line-height: 1.6; flex: 1; }
     .h-btn {
         margin-top: 0.8rem;
-        padding: 0.38rem 1.2rem;
+        padding: 0.42rem 1.4rem;
         background: rgba(96,165,250,0.12);
         border: 1px solid rgba(96,165,250,0.32);
         border-radius: 7px;
         color: #93c5fd;
-        font-size: 0.78rem; font-weight: 600;
+        font-size: 0.82rem; font-weight: 600;
         text-decoration: none !important;
         transition: background 0.18s, border-color 0.18s;
         white-space: nowrap;
@@ -2611,9 +2659,16 @@ def _render_home_page():
     """, unsafe_allow_html=True)
 
     # ------------------------------------------------------------------
-    # Build carousel image strips  (18 images, 6 per row, bigger)
+    # Build carousel: top-3 WAR per team from 2025 (all 30 teams represented)
     # ------------------------------------------------------------------
-    imgs = _cached_carousel_images(_HEADSHOTS_DIR, n=18, seed=42)
+    _comb_url = _data_url("data/mlb_combined_2021_2025.csv")
+    _carousel_players = _build_carousel_players(_comb_url)
+    imgs = _cached_carousel_images(
+        _HEADSHOTS_DIR,
+        n=90,
+        seed=42,
+        player_list=tuple(_carousel_players) if _carousel_players else (),
+    )
 
     def _strip(img_list: list, cls: str) -> str:
         tags = "".join(
@@ -2653,10 +2708,13 @@ def _render_home_page():
     <div class="home-wrap">
       <div class="home-bg">{bg_rows}</div>
       <div class="home-fg">
-        <div style="text-align:center;line-height:1.05;">
+        <div style="text-align:center;display:flex;align-items:center;justify-content:center;">
           <span class="home-title-grad">MLB Toolbox</span><span class="home-ball">&#9918;</span>
         </div>
         <div class="home-sub">Data &nbsp;&middot;&nbsp; Analysis &nbsp;&middot;&nbsp; Baseball</div>
+        <div class="home-mission">
+          <!-- Mission statement placeholder — update with your research statement -->
+        </div>
         <hr class="home-rule">
         <div class="home-cta">Choose a tool to get started</div>
         <div class="h-grid">{cards_html}</div>
