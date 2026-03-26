@@ -8386,7 +8386,7 @@ def _render_team_analysis_page():
             roster_40.columns = [c.strip() for c in roster_40.columns]
         except Exception:
             roster_40 = pd.DataFrame()
-    payroll_dir = _data_url("data/2026 Payroll") if _R2_MODE else os.path.join(_ROOT_DIR, "data", "2026 Payroll")
+    payroll_dir = _data_url("2026 Payroll") if _R2_MODE else os.path.join(_ROOT_DIR, "2026 Payroll")
 
     # Available teams from 40-man CSV
     _teams = sorted(roster_40["team"].dropna().unique()) if not roster_40.empty else sorted(_ABBR_TO_FULL.keys())
@@ -8403,19 +8403,14 @@ def _render_team_analysis_page():
 
     _full_name = f"{_TEAM_CITIES.get(sel_team, '')} {_ABBR_TO_FULL.get(sel_team, sel_team)}"
 
-    # ── Load 2025 combined stats (primary stats source) ──────────────────
+    # ── Load simulator data (same enriched dataset the simulator uses) ───
+    _ind_path = _data_url("data/2025mlbshared.csv")
+    _sim_hash = "r2-remote" if _R2_MODE else _file_hash(combined_csv)
     try:
-        _comb_all = _read_csv(combined_csv, low_memory=False)
-        _comb_all.columns = [c.strip() for c in _comb_all.columns]
-        _comb_all["Year"] = pd.to_numeric(_comb_all["Year"], errors="coerce")
-        for _nc in ["WAR_Total", "Salary_M", "Age", "HR", "AVG", "ERA", "IP", "PA"]:
-            if _nc in _comb_all.columns:
-                _comb_all[_nc] = pd.to_numeric(_comb_all[_nc], errors="coerce")
-        _comb_2025 = _comb_all[_comb_all["Year"] == 2025].copy()
-        _comb_team = _comb_2025[_comb_2025["Team"] == sel_team].copy()
+        _sim_df = _cached_simulator_data(combined_csv, _ind_path, _sim_hash)
+        _comb_team = _sim_df[_sim_df["Team"] == sel_team].copy()
     except Exception:
-        _comb_all = pd.DataFrame()
-        _comb_2025 = pd.DataFrame()
+        _sim_df = pd.DataFrame()
         _comb_team = pd.DataFrame()
 
     # ── Load 2026 payroll data ───────────────────────────────────────────
@@ -8426,7 +8421,7 @@ def _render_team_analysis_page():
     except Exception:
         team_pay = pd.DataFrame()
 
-    # If payroll data unavailable, fall back to combined 2025 data for salary
+    # Fall back to simulator data if payroll unavailable
     if team_pay.empty and not _comb_team.empty:
         team_pay = _comb_team.copy()
 
@@ -8512,30 +8507,23 @@ def _render_team_analysis_page():
             # Normalize 40-man names to match our datasets
             _merged["_key"] = _merged["full_name"].apply(_fix_player_name).str.lower().str.strip()
 
-            # Merge 2025 stats from combined dataset
-            if not _comb_team.empty:
-                _stat_cols = [c for c in ["Player", "WAR_Total", "Age", "Position",
-                              "Stage_Clean", "HR", "AVG", "OBP", "SLG", "ERA", "IP", "PA"]
-                              if c in _comb_team.columns]
-                _stat_lk = _comb_team[_stat_cols].drop_duplicates(subset=["Player"], keep="first").copy()
-                _stat_lk["_key"] = _stat_lk["Player"].str.lower().str.strip()
-                _merged = _merged.merge(_stat_lk.drop(columns=["Player"]), on="_key", how="left")
-
-            # Merge 2026 salary from payroll dataset
+            # Build unified lookup from payroll (priority) + simulator data (fallback)
+            _lookup = pd.DataFrame()
+            _lk_cols = ["Player", "WAR_Total", "Age", "Position", "Stage_Clean",
+                        "Salary_M", "PPR", "W_per_M", "HR", "AVG", "ERA", "IP",
+                        "2027", "2028"]
             if not team_pay.empty and "Player" in team_pay.columns:
-                _sal_cols = [c for c in ["Player", "Salary_M", "2027", "2028"] if c in team_pay.columns]
-                _sal_lk = team_pay[_sal_cols].drop_duplicates(subset=["Player"], keep="first").copy()
-                _sal_lk["_key"] = _sal_lk["Player"].str.lower().str.strip()
-                # Avoid column collision
-                _sal_rename = {}
-                for c in _sal_lk.columns:
-                    if c in _merged.columns and c != "_key":
-                        _sal_rename[c] = c + "_pay"
-                _sal_lk = _sal_lk.rename(columns=_sal_rename)
-                _merged = _merged.merge(_sal_lk, on="_key", how="left")
-                # Use payroll salary if available, otherwise keep combined
-                if "Salary_M_pay" in _merged.columns:
-                    _merged["Salary_M"] = _merged["Salary_M_pay"].fillna(_merged.get("Salary_M", 0.74))
+                _lk_pay = team_pay[[c for c in _lk_cols if c in team_pay.columns]].copy()
+                _lk_pay["_key"] = _lk_pay["Player"].str.lower().str.strip()
+                _lookup = _lk_pay.drop_duplicates(subset=["_key"], keep="first")
+            if _lookup.empty and not _comb_team.empty:
+                _lk_sim = _comb_team[[c for c in _lk_cols if c in _comb_team.columns]].copy()
+                _lk_sim["_key"] = _lk_sim["Player"].str.lower().str.strip()
+                _lookup = _lk_sim.drop_duplicates(subset=["_key"], keep="first")
+
+            if not _lookup.empty:
+                _merged = _merged.merge(_lookup.drop(columns=["Player"], errors="ignore"),
+                                        on="_key", how="left")
 
             # Fill missing salary with league min
             if "Salary_M" not in _merged.columns:
