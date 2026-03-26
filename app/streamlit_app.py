@@ -1105,7 +1105,8 @@ def _cached_carousel_images(headshots_dir: str, n: int = 90, seed: int = 42,
             url = _headshot_url(mid, width=213)
             try:
                 resp = _requests.get(url, timeout=4)
-                if resp.status_code == 200:
+                if resp.status_code == 200 and len(resp.content) > 8000:
+                    # Skip generic silhouettes (< 8KB) — only use real photos
                     result.append(base64.b64encode(resp.content).decode())
             except Exception:
                 continue
@@ -2487,14 +2488,14 @@ def _render_home_page():
         flex-direction: column;
         justify-content: space-evenly;
         padding: 10px 0;
-        opacity: 0.12;
+        opacity: 0.10;
     }
     .cr-row   { overflow: hidden; }
     .cr-track { display: flex; width: max-content; }
 
-    .cr-go-l1 { animation: go-l 120s linear infinite; }
-    .cr-go-r  { animation: go-r 130s linear infinite; }
-    .cr-go-l3 { animation: go-l 110s linear infinite; animation-delay: -22s; }
+    .cr-go-l1 { animation: go-l 200s linear infinite; }
+    .cr-go-r  { animation: go-r 200s linear infinite; }
+    .cr-go-l3 { animation: go-l 200s linear infinite; animation-delay: -60s; }
 
     @keyframes go-r {
         0%   { transform: translateX(-50%); }
@@ -2546,19 +2547,12 @@ def _render_home_page():
         font-size: 0.95rem; color: #93b8d8; text-align: center;
         max-width: 720px; line-height: 1.7; margin: 0.5rem auto;
     }
-    /* scrolling tagline */
+    /* stationary tagline */
     .home-ticker {
-        width: 100%; overflow: hidden; white-space: nowrap;
-        font-size: 0.72rem; color: #3d6888; letter-spacing: 0.18em;
-        text-transform: uppercase; margin-bottom: 0.3rem;
-    }
-    .home-ticker span {
-        display: inline-block;
-        animation: ticker-scroll 18s linear infinite;
-    }
-    @keyframes ticker-scroll {
-        0%   { transform: translateX(100%); }
-        100% { transform: translateX(-100%); }
+        width: 100%; text-align: center;
+        font-size: 0.82rem; color: #5a8aaa; letter-spacing: 0.22em;
+        text-transform: uppercase; margin-bottom: 0.4rem;
+        font-weight: 600;
     }
     .home-rule {
         width: 52%; border: none;
@@ -2724,7 +2718,7 @@ def _render_home_page():
     <div class="home-wrap">
       <div class="home-bg">{bg_rows}</div>
       <div class="home-fg">
-        <div class="home-ticker"><span>MLB Toolbox: Built by fans for fans &nbsp;&nbsp;&nbsp;⚾&nbsp;&nbsp;&nbsp; MLB Toolbox: Built by fans for fans &nbsp;&nbsp;&nbsp;⚾&nbsp;&nbsp;&nbsp;</span></div>
+        <div class="home-ticker">MLB Toolbox: Built by fans for fans</div>
         <div style="text-align:center;display:flex;align-items:center;justify-content:center;">
           <span class="home-title-grad">MLB Toolbox</span><span class="home-ball">&#9918;</span>
         </div>
