@@ -1700,9 +1700,9 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         '<span style="font-size:0.65rem;color:#2e4a62;text-transform:uppercase;'
         'letter-spacing:0.06em;margin-right:1.5rem;">Data-driven baseball analysis</span>'
         '<span style="flex:1;"></span>'
-        + _a('simulator', '🎮 Roster Simulator')
         + _a('rankings', '🏆 Rankings')
         + _a('league', '📊 Player Analysis')
+        + _a('simulator', '🎮 Roster Simulator')
         + _a('glossary', '📖 Glossary')
         + '<a href="https://docs.google.com/forms/d/e/1FAIpQLSdexY0xhRoQt3F6LVJHdZ7z4_nHeZZIL7Bn8bFrIaqmsTb0Pw/viewform?usp=publish-editor" '
         + 'target="_blank" style="color:#3b82f6;text-decoration:none;font-size:0.82rem;'
@@ -2492,9 +2492,9 @@ def _render_home_page():
     .cr-row   { overflow: hidden; }
     .cr-track { display: flex; width: max-content; }
 
-    .cr-go-l1 { animation: go-l 90s linear infinite; }
-    .cr-go-r  { animation: go-r 100s linear infinite; }
-    .cr-go-l3 { animation: go-l 80s linear infinite; animation-delay: -22s; }
+    .cr-go-l1 { animation: go-l 120s linear infinite; }
+    .cr-go-r  { animation: go-r 130s linear infinite; }
+    .cr-go-l3 { animation: go-l 110s linear infinite; animation-delay: -22s; }
 
     @keyframes go-r {
         0%   { transform: translateX(-50%); }
@@ -2543,8 +2543,8 @@ def _render_home_page():
         text-transform: uppercase; text-align: center;
     }
     .home-mission {
-        font-size: 0.85rem; color: #93b8d8; text-align: center;
-        max-width: 700px; line-height: 1.7; margin: 0.4rem auto;
+        font-size: 0.95rem; color: #93b8d8; text-align: center;
+        max-width: 720px; line-height: 1.7; margin: 0.5rem auto;
     }
     /* scrolling tagline */
     .home-ticker {
@@ -2565,7 +2565,7 @@ def _render_home_page():
         border-top: 1px solid rgba(96,165,250,0.18); margin: 0.3rem 0;
     }
     .home-cta {
-        font-size: 0.8rem; color: #3d6888; letter-spacing: 0.14em;
+        font-size: 0.88rem; color: #5a8aaa; letter-spacing: 0.14em;
         text-transform: uppercase; margin-top: 0.3rem;
     }
     /* card grid inside wrapper */
@@ -2594,9 +2594,9 @@ def _render_home_page():
         box-shadow: 0 4px 22px rgba(96,165,250,0.14);
         transform: translateY(-2px);
     }
-    .h-icon  { font-size: 2.6rem; line-height: 1; }
-    .h-title { font-size: 1.05rem; font-weight: 700; color: #dbeafe; }
-    .h-desc  { font-size: 0.78rem; color: #5a8aaa; line-height: 1.6; flex: 1; }
+    .h-icon  { font-size: 2.8rem; line-height: 1; }
+    .h-title { font-size: 1.12rem; font-weight: 700; color: #dbeafe; }
+    .h-desc  { font-size: 0.85rem; color: #7a9ebc; line-height: 1.6; flex: 1; }
     .h-btn {
         margin-top: 0.8rem;
         padding: 0.42rem 1.4rem;
@@ -2604,7 +2604,7 @@ def _render_home_page():
         border: 1px solid rgba(96,165,250,0.32);
         border-radius: 7px;
         color: #93c5fd;
-        font-size: 0.82rem; font-weight: 600;
+        font-size: 0.88rem; font-weight: 600;
         text-decoration: none !important;
         transition: background 0.18s, border-color 0.18s;
         white-space: nowrap;
@@ -2728,7 +2728,6 @@ def _render_home_page():
         <div style="text-align:center;display:flex;align-items:center;justify-content:center;">
           <span class="home-title-grad">MLB Toolbox</span><span class="home-ball">&#9918;</span>
         </div>
-        <div class="home-sub">Data &nbsp;&middot;&nbsp; Analysis &nbsp;&middot;&nbsp; Baseball</div>
         <div class="home-mission">
           Provide baseball fans with visualization tools and metrics to better track, rank and forecast team and player cost-per-win efficiency
         </div>
@@ -7372,33 +7371,33 @@ def _render_rankings_page():
         ), unsafe_allow_html=True)
     with qa3:
         st.markdown(_qa(
-            "🔴", "High Roller",
-            _full(_worst_eff),
-            f"${_worst_eff['dollar_gap_M']:.0f}M above the line",
-            "#280c0c",
-            "This team spent the most payroll $ for level of wins earned",
-        ), unsafe_allow_html=True)
-    with qa4:
-        st.markdown(_qa(
             "💰", "Best $ per fWAR",
             _full(_best_dpw),
             f"${_best_dpw['DPW']:.1f}M per fWAR",
             "#1a1228",
             "Lowest cost per fWAR — the most production per dollar on the roster",
         ), unsafe_allow_html=True)
-    with qa5:
+    with qa4:
         st.markdown(_qa(
-            "🏅", "Most Wins",
-            _full(_top_wins),
-            f"{int(_top_wins['Wins'])} wins",
-            tooltip="Highest regular-season win total for the selected year",
+            "🔴", "Least Efficient Spending",
+            _full(_worst_eff),
+            f"${_worst_eff['dollar_gap_M']:.0f}M above the line",
+            "#280c0c",
+            "This team spent the most payroll $ for level of wins earned",
         ), unsafe_allow_html=True)
-    with qa6:
+    with qa5:
         st.markdown(_qa(
             "⭐", "Top fWAR",
             _full(_top_war),
             f"{_top_war['team_WAR']:.1f} total fWAR",
             tooltip="Highest total roster fWAR — sum of all player contributions above replacement",
+        ), unsafe_allow_html=True)
+    with qa6:
+        st.markdown(_qa(
+            "🏅", "Most Wins",
+            _full(_top_wins),
+            f"{int(_top_wins['Wins'])} wins",
+            tooltip="Highest regular-season win total for the selected year",
         ), unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top:0.8rem;'></div>", unsafe_allow_html=True)
@@ -7555,7 +7554,7 @@ def _render_rankings_page():
             _s.columns = ["#", "Team", "Payroll $M", "WAR", "$/fWAR M", "Wins", "Postseason"]
             _s["Payroll $M"] = _s["Payroll $M"].round(0).astype(int)
             _s["WAR"]        = _s["WAR"].round(1)
-            _s["$/WAR M"]    = _s["$/WAR M"].round(1)
+            _s["$/fWAR M"]    = _s["$/fWAR M"].round(1)
             _s["Wins"]       = _s["Wins"].round(0).astype(int)
             _s["Postseason"]  = _s["Postseason"].map({True: "✓", False: ""})
 
@@ -7634,7 +7633,7 @@ def _render_rankings_page():
         _rk = _rk[_rk_cols].rename(columns={
             "Abbr": "Abbr", "Team": "Team", "Division": "Division",
             "Avg_Wins": "Avg Wins", "Avg_Pay_M": "Avg Pay $M",
-            "Avg_$/WAR_M": "$/WAR M", "Avg_Gap_M": "Avg Gap $M",
+            "Avg_$/WAR_M": "$/fWAR M", "Avg_Gap_M": "Avg Gap $M",
             "Playoff_Apps": "Playoffs (5yr)", "WS_Wins": "WS",
         })
 
@@ -7650,7 +7649,7 @@ def _render_rankings_page():
 
         _rk["Avg Pay $M"] = _rk["Avg Pay $M"].round(0).astype(int)
         _rk["Avg Gap $M"] = _rk["Avg Gap $M"].round(0).astype(int)
-        _rk["$/WAR M"]    = _rk["$/WAR M"].round(2)
+        _rk["$/fWAR M"]    = _rk["$/fWAR M"].round(2)
         st.dataframe(
             _rk.style.apply(_rk_clr, axis=1),
             hide_index=True, use_container_width=True, height=680,
