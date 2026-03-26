@@ -1864,6 +1864,7 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         'letter-spacing:0.06em;margin-right:1.5rem;">Data-driven baseball analysis</span>'
         '<span style="flex:1;"></span>'
         + _a('rankings', '🏆 Rankings')
+        + _a('team', '🏟️ Team Analysis')
         + _a('league', '📊 Player Analysis')
         + _a('simulator', '🎮 Roster Simulator')
         + _a('glossary', '📖 Glossary')
@@ -2617,6 +2618,9 @@ def _render_home_page():
         ("rankings",  "🏆", "Rankings",
          "All 30 MLB teams ranked by efficiency, fWAR, payroll, and win performance. "
          "See which franchises get the most wins per dollar and which are overspending."),
+        ("team",      "🏟️", "Team Analysis",
+         "Deep-dive into any MLB team — roster breakdown, salary commitments, "
+         "efficiency rankings, fWAR leaders, IL status, and 3-year payroll projections."),
         ("league",    "📊", "Player Analysis",
          "Player-level cost effective line, PPEL regression, fWAR stability ratings, "
          "and age trajectory analysis across 4,000+ player-seasons."),
@@ -8336,6 +8340,400 @@ def _render_rankings_page():
 
 
 # ---------------------------------------------------------------------------
+# Team Analysis page
+# ---------------------------------------------------------------------------
+
+_ABBR_TO_FULL: dict[str, str] = {v: k for k, v in _PAYROLL_2026_TEAM_MAP.items()}
+_TEAM_CITIES: dict[str, str] = {
+    "ARI": "Arizona", "ATH": "Athletics", "ATL": "Atlanta", "BAL": "Baltimore",
+    "BOS": "Boston", "CHC": "Chicago", "CHW": "Chicago", "CIN": "Cincinnati",
+    "CLE": "Cleveland", "COL": "Colorado", "DET": "Detroit", "HOU": "Houston",
+    "KCR": "Kansas City", "LAA": "Los Angeles", "LAD": "Los Angeles", "MIA": "Miami",
+    "MIL": "Milwaukee", "MIN": "Minnesota", "NYM": "New York", "NYY": "New York",
+    "PHI": "Philadelphia", "PIT": "Pittsburgh", "SDP": "San Diego", "SEA": "Seattle",
+    "SFG": "San Francisco", "STL": "St. Louis", "TBR": "Tampa Bay", "TEX": "Texas",
+    "TOR": "Toronto", "WSN": "Washington",
+}
+
+
+def _render_team_analysis_page():
+    """Full team deep-dive page — roster, rankings, salary, projections."""
+
+    # ── Data loading ─────────────────────────────────────────────────────
+    detail_csv   = _data_url("efficiency_detail.csv")
+    combined_csv = _data_url("data/mlb_combined_2021_2025.csv")
+    roster_csv   = _data_url("data/40man_rosters_2025.csv")
+
+    detail_df  = _read_csv(detail_csv)
+    roster_40  = _cached_40man_roster(roster_csv, _file_hash(roster_csv))
+    payroll_dir = _data_url("data/2026 Payroll") if _R2_MODE else os.path.join(_ROOT_DIR, "data", "2026 Payroll")
+
+    # Available teams from 40-man CSV
+    _teams = sorted(roster_40["team"].dropna().unique()) if not roster_40.empty else sorted(_ABBR_TO_FULL.keys())
+
+    # ── Team selector ────────────────────────────────────────────────────
+    sel_col, _, _ = st.columns([2, 3, 3])
+    with sel_col:
+        sel_team = st.selectbox(
+            "Select a Team",
+            _teams,
+            format_func=lambda t: f"{_TEAM_CITIES.get(t, t)} {_ABBR_TO_FULL.get(t, t)} ({t})",
+            key="team_analysis_sel",
+        )
+
+    _full_name = f"{_TEAM_CITIES.get(sel_team, '')} {_ABBR_TO_FULL.get(sel_team, sel_team)}"
+
+    # ── Load team payroll data ───────────────────────────────────────────
+    try:
+        _pay_hash = _dir_hash(payroll_dir) if not _R2_MODE else "r2"
+        df26 = _cached_2026_payroll(payroll_dir, combined_csv, _pay_hash)
+        team_pay = df26[df26["Team"] == sel_team].copy() if not df26.empty else pd.DataFrame()
+    except Exception:
+        team_pay = pd.DataFrame()
+
+    # ── Load 40-man roster for this team ─────────────────────────────────
+    team_roster = roster_40[roster_40["team"] == sel_team].copy() if not roster_40.empty else pd.DataFrame()
+    n_active = int((team_roster["status"] == "Active").sum()) if not team_roster.empty else 0
+    n_il     = int((team_roster["status"] == "Injured 60-Day").sum()) if not team_roster.empty else 0
+    n_total  = len(team_roster)
+
+    # ── Efficiency data for this team ────────────────────────────────────
+    team_eff = detail_df[detail_df["Team"] == sel_team].copy() if not detail_df.empty else pd.DataFrame()
+    all_eff_2025 = detail_df[detail_df["Year"] == 2025] if not detail_df.empty else pd.DataFrame()
+
+    # ── Latest season stats ──────────────────────────────────────────────
+    _latest = team_eff[team_eff["Year"] == 2025].iloc[0] if not team_eff.empty and 2025 in team_eff["Year"].values else None
+
+    # ══════════════════════════════════════════════════════════════════════
+    # HEADER CARD
+    # ══════════════════════════════════════════════════════════════════════
+    _payroll_m = float(_latest["payroll_M"]) if _latest is not None else 0
+    _wins      = int(_latest["Wins"]) if _latest is not None else 0
+    _war       = float(_latest["team_WAR"]) if _latest is not None else 0
+    _gap       = float(_latest["dollar_gap_M"]) if _latest is not None else 0
+    _playoff   = bool(_latest["in_playoffs"]) if _latest is not None else False
+
+    # Compute rankings among all teams (2025)
+    _eff_rank = int((all_eff_2025["dollar_gap_M"].rank(ascending=True) == all_eff_2025.loc[all_eff_2025["Team"] == sel_team, "dollar_gap_M"].rank(ascending=True).values[0]).sum()) if not all_eff_2025.empty and sel_team in all_eff_2025["Team"].values else 0
+    if not all_eff_2025.empty and sel_team in all_eff_2025["Team"].values:
+        _eff_rank = int(all_eff_2025["dollar_gap_M"].rank().loc[all_eff_2025["Team"] == sel_team].values[0])
+        _war_rank = int(all_eff_2025["team_WAR"].rank(ascending=False).loc[all_eff_2025["Team"] == sel_team].values[0])
+        _pay_rank = int(all_eff_2025["payroll_M"].rank(ascending=False).loc[all_eff_2025["Team"] == sel_team].values[0])
+    else:
+        _eff_rank = _war_rank = _pay_rank = 0
+
+    st.markdown(
+        f"<div style='background:linear-gradient(135deg,#0f2035,#0d1b2a);border:1px solid #1e3a5c;"
+        f"border-radius:10px;padding:16px 20px;margin-bottom:14px;'>"
+        f"<div style='font-size:1.4rem;font-weight:800;color:#e8f4ff;margin-bottom:8px;'>"
+        f"🏟️ {_full_name}</div>"
+        f"<div style='display:flex;flex-wrap:wrap;gap:12px;'>"
+        f"<div style='background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;'>"
+        f"<div style='font-size:10px;color:#7a9ebc;text-transform:uppercase;'>2025 Record</div>"
+        f"<div style='font-size:1.2rem;font-weight:700;color:#e8f4ff;'>{_wins}W</div></div>"
+        f"<div style='background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;'>"
+        f"<div style='font-size:10px;color:#7a9ebc;text-transform:uppercase;'>2026 Payroll</div>"
+        f"<div style='font-size:1.2rem;font-weight:700;color:#e8f4ff;'>${_payroll_m:.0f}M</div></div>"
+        f"<div style='background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;'>"
+        f"<div style='font-size:10px;color:#7a9ebc;text-transform:uppercase;'>Team fWAR</div>"
+        f"<div style='font-size:1.2rem;font-weight:700;color:#e8f4ff;'>{_war:.1f}</div></div>"
+        f"<div style='background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;'>"
+        f"<div style='font-size:10px;color:#7a9ebc;text-transform:uppercase;'>Efficiency Gap</div>"
+        f"<div style='font-size:1.2rem;font-weight:700;color:{'#22c55e' if _gap < 0 else '#ef4444'};'>"
+        f"{'$' + str(int(_gap)) + 'M' if _gap <= 0 else '+$' + str(int(_gap)) + 'M'}</div></div>"
+        f"<div style='background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;'>"
+        f"<div style='font-size:10px;color:#7a9ebc;text-transform:uppercase;'>Postseason</div>"
+        f"<div style='font-size:1.2rem;font-weight:700;color:{'#22c55e' if _playoff else '#4a687e'};'>"
+        f"{'✓ Yes' if _playoff else '✗ No'}</div></div>"
+        f"<div style='background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;'>"
+        f"<div style='font-size:10px;color:#7a9ebc;text-transform:uppercase;'>40-Man Roster</div>"
+        f"<div style='font-size:1.2rem;font-weight:700;color:#e8f4ff;'>{n_active} <span style='font-size:0.7rem;color:#7a9ebc;'>active</span>"
+        f" · {n_il} <span style='font-size:0.7rem;color:#ef4444;'>IL</span></div></div>"
+        f"</div>"
+        f"<div style='display:flex;gap:16px;margin-top:10px;font-size:0.78rem;color:#7a9ebc;'>"
+        f"<span>Efficiency Rank: <b style='color:#d6e8f8;'>#{_eff_rank}/30</b></span>"
+        f"<span>fWAR Rank: <b style='color:#d6e8f8;'>#{_war_rank}/30</b></span>"
+        f"<span>Payroll Rank: <b style='color:#d6e8f8;'>#{_pay_rank}/30</b></span>"
+        f"</div></div>",
+        unsafe_allow_html=True,
+    )
+
+    # ══════════════════════════════════════════════════════════════════════
+    # TABS
+    # ══════════════════════════════════════════════════════════════════════
+    tt1, tt2, tt3, tt4 = st.tabs(["📋 Roster", "📊 Rankings", "💰 Salary & Payroll", "📈 History"])
+
+    # ── Tab 1 — Roster ───────────────────────────────────────────────────
+    with tt1:
+        if not team_roster.empty:
+            # Split active vs IL
+            _active = team_roster[team_roster["status"] == "Active"].copy()
+            _injured = team_roster[team_roster["status"] != "Active"].copy()
+
+            # Merge with payroll data for salary/WAR
+            if not team_pay.empty:
+                _merge_cols = ["Player", "Position", "Salary_M", "WAR_Total", "Stage_Clean", "Age"]
+                _merge_cols = [c for c in _merge_cols if c in team_pay.columns]
+                _pay_lookup = team_pay[_merge_cols].copy()
+                _pay_lookup["_key"] = _pay_lookup["Player"].str.lower().str.strip()
+                _active["_key"] = _active["full_name"].str.lower().str.strip()
+                _active = _active.merge(_pay_lookup, on="_key", how="left")
+                _injured["_key"] = _injured["full_name"].str.lower().str.strip()
+                _injured = _injured.merge(_pay_lookup, on="_key", how="left")
+
+            st.markdown(f"##### Active Roster ({len(_active)} players)")
+            _act_show = _active[["full_name", "position", "jersey_number"]].copy()
+            if "Salary_M" in _active.columns:
+                _act_show["Salary $M"] = _active["Salary_M"].round(1)
+            if "WAR_Total" in _active.columns:
+                _act_show["fWAR"] = _active["WAR_Total"].round(1)
+            if "Stage_Clean" in _active.columns:
+                _act_show["Stage"] = _active["Stage_Clean"]
+            _act_show.columns = [c.replace("full_name", "Player").replace("position", "Pos").replace("jersey_number", "#") for c in _act_show.columns]
+            st.dataframe(_act_show, hide_index=True, use_container_width=True,
+                         height=min(60 + len(_act_show) * 35, 600))
+
+            if not _injured.empty:
+                st.markdown(
+                    f"##### 🏥 Injured List ({len(_injured)} players)",
+                )
+                _il_show = _injured[["full_name", "position", "status"]].copy()
+                if "Salary_M" in _injured.columns:
+                    _il_show["Salary $M"] = _injured["Salary_M"].round(1)
+                if "WAR_Total" in _injured.columns:
+                    _il_show["fWAR"] = _injured["WAR_Total"].round(1)
+                _il_show.columns = [c.replace("full_name", "Player").replace("position", "Pos") for c in _il_show.columns]
+                st.dataframe(_il_show, hide_index=True, use_container_width=True,
+                             height=min(60 + len(_il_show) * 35, 300))
+        else:
+            st.info(f"No 40-man roster data available for {sel_team}.")
+
+    # ── Tab 2 — Rankings Position ────────────────────────────────────────
+    with tt2:
+        if not all_eff_2025.empty:
+            st.markdown(
+                "<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.8rem;line-height:1.6;'>"
+                "Where this team ranks among all 30 MLB teams in 2025. "
+                "<span style='color:#f59e0b;font-weight:600;'>Gold</span> highlights the selected team.</div>",
+                unsafe_allow_html=True,
+            )
+
+            _rk = all_eff_2025.sort_values("dollar_gap_M").reset_index(drop=True)
+            _rk["Rank"] = range(1, len(_rk) + 1)
+            _colors = ["#f59e0b" if t == sel_team else ("#22c55e" if g < 0 else "#ef4444")
+                        for t, g in zip(_rk["Team"], _rk["dollar_gap_M"])]
+
+            fig_rk = go.Figure(go.Bar(
+                y=_rk["Team"], x=_rk["dollar_gap_M"], orientation="h",
+                marker_color=_colors,
+                text=[f"${g:+.0f}M" for g in _rk["dollar_gap_M"]],
+                textposition="outside", textfont=dict(color="#d6e8f8", size=9),
+                hovertemplate="%{y}: $%{x:+.0f}M<extra></extra>",
+            ))
+            _abs_max = max(abs(_rk["dollar_gap_M"].max()), abs(_rk["dollar_gap_M"].min())) * 1.15
+            fig_rk.update_layout(**_pt(
+                title=f"2025 Efficiency Ranking — {_full_name} is #{_eff_rank}",
+                xaxis=dict(title="$ Gap ($M) — negative = efficient",
+                           zeroline=True, zerolinecolor="#4a687e", zerolinewidth=1,
+                           range=[-_abs_max, _abs_max]),
+                yaxis=dict(autorange="reversed"),
+                height=max(400, len(_rk) * 22),
+                margin=dict(l=60, r=80, t=42, b=30),
+            ))
+            st.plotly_chart(fig_rk, use_container_width=True, config={"displayModeBar": False})
+
+            # fWAR ranking bar
+            _wrk = all_eff_2025.sort_values("team_WAR", ascending=False).reset_index(drop=True)
+            _wrk["Rank"] = range(1, len(_wrk) + 1)
+            _wcolors = ["#f59e0b" if t == sel_team else "#3b82f6" for t in _wrk["Team"]]
+
+            fig_wrk = go.Figure(go.Bar(
+                y=_wrk["Team"], x=_wrk["team_WAR"], orientation="h",
+                marker_color=_wcolors,
+                text=[f"{w:.1f}" for w in _wrk["team_WAR"]],
+                textposition="outside", textfont=dict(color="#d6e8f8", size=9),
+                hovertemplate="%{y}: %{x:.1f} fWAR<extra></extra>",
+            ))
+            fig_wrk.update_layout(**_pt(
+                title=f"2025 fWAR Ranking — {_full_name} is #{_war_rank}",
+                xaxis=dict(title="Total Team fWAR"),
+                yaxis=dict(autorange="reversed"),
+                height=max(400, len(_wrk) * 22),
+                margin=dict(l=60, r=80, t=42, b=30),
+            ))
+            st.plotly_chart(fig_wrk, use_container_width=True, config={"displayModeBar": False})
+        else:
+            st.info("No efficiency ranking data available.")
+
+    # ── Tab 3 — Salary & Payroll ─────────────────────────────────────────
+    with tt3:
+        if not team_pay.empty:
+            # Salary by stage
+            _stg_sal = team_pay.groupby("Stage_Clean")["Salary_M"].sum().reset_index()
+            _stg_colors = {"Pre-Arb": "#22c55e", "Arb": "#f59e0b", "FA": "#3b82f6"}
+
+            fig_stg = go.Figure(go.Pie(
+                labels=_stg_sal["Stage_Clean"],
+                values=_stg_sal["Salary_M"],
+                marker_colors=[_stg_colors.get(s, "#4a687e") for s in _stg_sal["Stage_Clean"]],
+                hole=0.45,
+                textinfo="label+percent",
+                textfont=dict(color="#d6e8f8", size=11),
+                hovertemplate="%{label}: $%{value:.1f}M<extra></extra>",
+            ))
+            fig_stg.update_layout(**_pt(
+                title="2026 Payroll by Contract Stage",
+                height=360, showlegend=False,
+            ))
+            st.plotly_chart(fig_stg, use_container_width=True, config={"displayModeBar": False})
+
+            # Top 10 highest paid
+            _top_sal = team_pay.nlargest(10, "Salary_M")[["Player", "Position", "Salary_M", "WAR_Total", "Stage_Clean"]].copy()
+            _top_sal.insert(0, "#", range(1, len(_top_sal) + 1))
+            _top_sal.columns = ["#", "Player", "Pos", "Salary $M", "fWAR", "Stage"]
+            st.markdown("##### Top 10 Highest-Paid Players")
+            st.dataframe(
+                _top_sal.style.format({"Salary $M": "{:.1f}", "fWAR": "{:.1f}"}, na_rep="—"),
+                hide_index=True, use_container_width=True,
+            )
+
+            # Future payroll commitments (3-year)
+            st.markdown("##### 📅 Projected Payroll (2026–2028)")
+            _yr_cols = ["2026_total", "2027_total", "2028_total"]
+            _s26 = float(team_pay["Salary_M"].sum())
+            _s27 = float(team_pay["2027"].dropna().sum()) if "2027" in team_pay.columns else 0
+            _s28 = float(team_pay["2028"].dropna().sum()) if "2028" in team_pay.columns else 0
+
+            fig_proj = go.Figure()
+            fig_proj.add_trace(go.Bar(
+                x=["2026", "2027", "2028"],
+                y=[_s26, _s27, _s28],
+                marker_color=["#3b82f6", "#60a5fa", "#93c5fd"],
+                text=[f"${v:.0f}M" for v in [_s26, _s27, _s28]],
+                textposition="outside", textfont=dict(color="#d6e8f8"),
+                hovertemplate="%{x}: $%{y:.1f}M<extra></extra>",
+            ))
+            fig_proj.add_hline(y=244, line_dash="dash", line_color="#f59e0b", opacity=0.5,
+                               annotation_text="CBT $244M", annotation_font_color="#f59e0b")
+            fig_proj.update_layout(**_pt(
+                title=f"{_full_name} — Committed Payroll",
+                yaxis=dict(title="Total $M"), height=340,
+            ))
+            st.plotly_chart(fig_proj, use_container_width=True, config={"displayModeBar": False})
+
+            st.caption(
+                "2026 reflects actual contracts. 2027–2028 include only confirmed multi-year commitments. "
+                "Players whose contracts expire show $0 for future years."
+            )
+
+            # CBT status
+            _cbt_lbl, _cbt_bg, _, _, _cbt_note = _cbt_info(_s26)
+            st.markdown(
+                f"<div style='background:{_cbt_bg};border-radius:8px;padding:10px 14px;"
+                f"font-size:0.85rem;color:#d6e8f8;margin-top:0.5rem;'>"
+                f"<b>CBT Status:</b> {_cbt_lbl} at ${_s26:.0f}M — {_cbt_note}</div>",
+                unsafe_allow_html=True,
+            )
+        else:
+            st.info(f"No 2026 payroll data available for {sel_team}.")
+
+    # ── Tab 4 — Historical Trends ────────────────────────────────────────
+    with tt4:
+        if not team_eff.empty and len(team_eff) >= 2:
+            st.markdown(
+                "<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.8rem;'>"
+                "Season-by-season trends for this team across key metrics (2021–2025).</div>",
+                unsafe_allow_html=True,
+            )
+
+            # Wins trend
+            _te = team_eff.sort_values("Year")
+            fig_hist = go.Figure()
+            fig_hist.add_trace(go.Scatter(
+                x=_te["Year"], y=_te["Wins"], mode="lines+markers+text",
+                marker=dict(color="#3b82f6", size=10),
+                line=dict(color="#3b82f6", width=2),
+                text=[f"{int(w)}" for w in _te["Wins"]],
+                textposition="top center", textfont=dict(color="#d6e8f8", size=10),
+                name="Wins",
+                hovertemplate="%{x}: %{y} wins<extra></extra>",
+            ))
+            fig_hist.add_trace(go.Scatter(
+                x=_te["Year"], y=_te["pred_wins"], mode="lines",
+                line=dict(color="#f59e0b", dash="dash", width=1),
+                name="Predicted (by payroll)",
+                hovertemplate="%{x}: %{y:.0f} predicted<extra></extra>",
+            ))
+            fig_hist.update_layout(**_pt(
+                title=f"{_full_name} — Wins vs Payroll Prediction",
+                xaxis=dict(title="Season", dtick=1),
+                yaxis=dict(title="Wins"),
+                height=380, showlegend=True,
+                legend=dict(orientation="h", y=1.02, x=1, xanchor="right", yanchor="bottom"),
+            ))
+            st.plotly_chart(fig_hist, use_container_width=True, config={"displayModeBar": False})
+
+            # Efficiency gap trend
+            fig_gap = go.Figure(go.Bar(
+                x=_te["Year"].astype(int).astype(str),
+                y=_te["dollar_gap_M"],
+                marker_color=["#22c55e" if g < 0 else "#ef4444" for g in _te["dollar_gap_M"]],
+                text=[f"${g:+.0f}M" for g in _te["dollar_gap_M"]],
+                textposition="outside", textfont=dict(color="#d6e8f8", size=10),
+                hovertemplate="%{x}: $%{y:+.0f}M<extra></extra>",
+            ))
+            _abs_max_g = max(abs(_te["dollar_gap_M"]).max(), 10) * 1.3
+            fig_gap.update_layout(**_pt(
+                title=f"{_full_name} — Efficiency Gap by Season",
+                xaxis=dict(title="Season"),
+                yaxis=dict(title="$ Gap ($M)", zeroline=True, zerolinecolor="#4a687e",
+                           range=[-_abs_max_g, _abs_max_g]),
+                height=340,
+            ))
+            st.plotly_chart(fig_gap, use_container_width=True, config={"displayModeBar": False})
+
+            # Payroll + fWAR trend
+            fig_pw = go.Figure()
+            fig_pw.add_trace(go.Bar(
+                x=_te["Year"].astype(int).astype(str), y=_te["payroll_M"],
+                name="Payroll $M", marker_color="#3b82f6", opacity=0.6,
+                hovertemplate="%{x}: $%{y:.0f}M<extra></extra>",
+            ))
+            fig_pw.add_trace(go.Scatter(
+                x=_te["Year"].astype(int).astype(str), y=_te["team_WAR"],
+                name="Team fWAR", yaxis="y2",
+                mode="lines+markers", marker=dict(color="#22c55e", size=8),
+                line=dict(color="#22c55e", width=2),
+                hovertemplate="%{x}: %{y:.1f} fWAR<extra></extra>",
+            ))
+            fig_pw.update_layout(**_pt(
+                title=f"{_full_name} — Payroll vs fWAR",
+                yaxis=dict(title="Payroll $M"),
+                yaxis2=dict(title="fWAR", overlaying="y", side="right",
+                            gridcolor="rgba(0,0,0,0)", tickfont=dict(color="#22c55e"),
+                            title_font=dict(color="#22c55e")),
+                height=380, showlegend=True,
+                legend=dict(orientation="h", y=1.02, x=1, xanchor="right", yanchor="bottom"),
+            ))
+            st.plotly_chart(fig_pw, use_container_width=True, config={"displayModeBar": False})
+
+            # Summary table
+            st.markdown("##### Season-by-Season Summary")
+            _sum = _te[["Year", "Wins", "payroll_M", "team_WAR", "dollar_gap_M", "in_playoffs"]].copy()
+            _sum.columns = ["Year", "Wins", "Payroll $M", "fWAR", "Gap $M", "Postseason"]
+            _sum["Year"] = _sum["Year"].astype(int)
+            _sum["Postseason"] = _sum["Postseason"].map({True: "✓", False: ""})
+            st.dataframe(
+                _sum.style.format({"Payroll $M": "{:.0f}", "fWAR": "{:.1f}", "Gap $M": "{:+.0f}"}, na_rep="—"),
+                hide_index=True, use_container_width=True,
+            )
+        else:
+            st.info(f"Not enough historical data for {sel_team}.")
+
+    _render_feedback_widget("team")
+
+
+# ---------------------------------------------------------------------------
 # Glossary & Methodology page
 # ---------------------------------------------------------------------------
 
@@ -8710,7 +9108,7 @@ def _render_glossary_page():
 # ---------------------------------------------------------------------------
 
 def main():
-    _valid_pages = {"home", "league", "simulator", "roster_optimizer", "rankings", "glossary"}
+    _valid_pages = {"home", "league", "simulator", "roster_optimizer", "rankings", "glossary", "team"}
     if "page" not in st.session_state:
         # First load or browser refresh — restore from URL query param
         qp = st.query_params.get("page", "home")
@@ -8739,6 +9137,8 @@ def main():
     elif page == "roster_optimizer":
         base_cfg = _load_base_config(_DEFAULT_CONFIG) if os.path.exists(_DEFAULT_CONFIG) else {}
         _render_roster_optimizer_page(base_cfg)
+    elif page == "team":
+        _render_team_analysis_page()
     elif page == "glossary":
         _render_glossary_page()
 
