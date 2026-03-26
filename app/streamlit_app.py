@@ -8364,8 +8364,22 @@ def _render_team_analysis_page():
     combined_csv = _data_url("data/mlb_combined_2021_2025.csv")
     roster_csv   = _data_url("data/40man_rosters_2025.csv")
 
-    detail_df  = _read_csv(detail_csv)
-    roster_40  = _cached_40man_roster(roster_csv, _file_hash(roster_csv))
+    try:
+        detail_df = _read_csv(detail_csv)
+    except Exception:
+        detail_df = pd.DataFrame()
+    # Load 40-man roster — try cached first, then direct read
+    roster_40 = st.session_state.get("_sim_roster_40", pd.DataFrame())
+    if roster_40.empty:
+        _r40_hash = "r2-remote" if _R2_MODE else _file_hash(roster_csv)
+        roster_40 = _cached_40man_roster(roster_csv, _r40_hash)
+    if roster_40.empty:
+        # Direct fallback read (bypass cache) for R2 mode
+        try:
+            roster_40 = _read_csv(roster_csv, low_memory=False)
+            roster_40.columns = [c.strip() for c in roster_40.columns]
+        except Exception:
+            roster_40 = pd.DataFrame()
     payroll_dir = _data_url("data/2026 Payroll") if _R2_MODE else os.path.join(_ROOT_DIR, "data", "2026 Payroll")
 
     # Available teams from 40-man CSV
