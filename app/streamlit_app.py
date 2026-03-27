@@ -8509,42 +8509,58 @@ def _render_team_analysis_page():
         ("West",    ["ARI", "COL", "LAD", "SDP", "SFG"]),
     ]
 
+    # Handle team selection from query param
+    _qp_team = st.query_params.get("sel_team")
+    if _qp_team and _qp_team in [t for d in _AL_DIVS + _NL_DIVS for t in d[1]]:
+        st.session_state["team_analysis_sel"] = _qp_team
     if "team_analysis_sel" not in st.session_state:
         st.session_state["team_analysis_sel"] = "NYY"
     sel_team = st.session_state["team_analysis_sel"]
 
+    def _team_card(tm, is_active):
+        tc_p, tc_a, tc_d = _TEAM_COLORS.get(tm, ("#3b82f6", "#93c5fd", "#081420"))
+        if is_active:
+            bg = "#18243a"
+            bdr = "#3b82f6"
+            abbr_c = "#e8f4ff"
+            name_c = "#93b8d8"
+        else:
+            bg = tc_p
+            bdr = f"{tc_a}66"
+            abbr_c = "#e8f4ff"
+            name_c = tc_a
+        return (
+            f'<a href="?page=team&sel_team={tm}" target="_self" style="text-decoration:none;">'
+            f'<div style="background:{bg};border:1px solid {bdr};border-radius:8px;'
+            f'padding:8px 4px 6px;text-align:center;transition:transform 0.15s,box-shadow 0.15s;'
+            f'min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;"'
+            f' onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 4px 12px rgba(0,0,0,0.4)\'"'
+            f' onmouseout="this.style.transform=\'none\';this.style.boxShadow=\'none\'">'
+            f'<div style="font-size:1.2rem;font-weight:800;color:{abbr_c};line-height:1.1;">{tm}</div>'
+            f'<div style="font-size:0.62rem;color:{name_c};margin-top:2px;">{_ABBR_TO_FULL.get(tm, tm)}</div>'
+            f'</div></a>'
+        )
+
     def _render_league_grid(league_name, divs):
         st.markdown(
-            f"<div style='font-size:0.85rem;font-weight:700;color:#93b8d8;text-align:center;"
-            f"margin-bottom:0.4rem;letter-spacing:0.1em;'>{league_name}</div>",
+            f"<div style='font-size:0.85rem;font-weight:700;color:#d6e8f8;text-align:center;"
+            f"margin-bottom:0.3rem;letter-spacing:0.1em;'>{league_name}</div>",
             unsafe_allow_html=True,
         )
         for div_name, teams in divs:
             st.markdown(
-                f"<div style='font-size:0.62rem;color:#4a687e;font-weight:600;"
-                f"margin:0.3rem 0 0.15rem;'>{div_name}</div>",
+                f"<div style='font-size:0.65rem;color:#d6e8f8;font-weight:600;"
+                f"margin:0.2rem 0 0.1rem;'>{div_name}</div>",
                 unsafe_allow_html=True,
             )
-            tcols = st.columns(5)
-            for ti, tm in enumerate(teams):
-                tc_p, tc_a, tc_d = _TEAM_COLORS.get(tm, ("#3b82f6", "#93c5fd", "#081420"))
-                is_active = tm == sel_team
-                with tcols[ti]:
-                    if st.button(
-                        f"{tm}", key=f"tpick_{tm}", use_container_width=True,
-                    ):
-                        st.session_state["team_analysis_sel"] = tm
-                        st.rerun()
-                    # Team name below button in accent color
-                    _nc = "#93b8d8" if is_active else tc_a
-                    st.markdown(
-                        f"<div style='margin-top:-0.5rem;text-align:center;"
-                        f"font-size:0.6rem;color:{_nc};line-height:1.2;'>"
-                        f"{_ABBR_TO_FULL.get(tm, tm)}</div>",
-                        unsafe_allow_html=True,
-                    )
+            cards = "".join(_team_card(tm, tm == sel_team) for tm in teams)
+            st.markdown(
+                f"<div style='display:grid;grid-template-columns:repeat(5,1fr);gap:6px;"
+                f"margin-bottom:4px;'>{cards}</div>",
+                unsafe_allow_html=True,
+            )
 
-    al_col, nl_col = st.columns(2, gap="large")
+    al_col, nl_col = st.columns(2, gap="medium")
     with al_col:
         _render_league_grid("AL", _AL_DIVS)
     with nl_col:
