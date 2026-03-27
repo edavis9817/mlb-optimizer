@@ -2625,8 +2625,8 @@ def _render_home_page():
          "All 30 MLB teams ranked by efficiency, fWAR, payroll, and win performance. "
          "See which franchises get the most wins per dollar and which are overspending."),
         ("team",      "🏟️", "Team Analysis",
-         "Deep-dive into any MLB team — roster breakdown, salary commitments, "
-         "efficiency rankings, fWAR leaders, IL status, and 3-year payroll projections."),
+         "Deep dive into any MLB team. Roster breakdown, salary commitments, "
+         "efficiency rankings, fWAR leaders, IL status, and 3 year payroll projections."),
         ("league",    "📊", "Player Analysis",
          "Player-level cost effective line, PPEL regression, fWAR stability ratings, "
          "and age trajectory analysis across 4,000+ player-seasons."),
@@ -2678,7 +2678,7 @@ def _render_home_page():
         100% { transform: translateX(-50%); }
     }
     .cr-img {
-        width: 210px; height: 210px;
+        width: 240px; height: 240px;
         object-fit: cover; object-position: top center;
         border-radius: 10px; margin: 0 10px; flex-shrink: 0;
     }
@@ -2737,10 +2737,10 @@ def _render_home_page():
     /* card grid inside wrapper */
     .h-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 1.2rem;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
         width: 100%;
-        max-width: 1200px;
+        max-width: 1300px;
         margin-top: 0.8rem;
     }
     .h-card {
@@ -2895,7 +2895,7 @@ def _render_home_page():
           <span class="home-title-grad">MLB Toolbox</span><span class="home-ball">&#9918;</span>
         </div>
         <div class="home-mission">
-          Provide baseball fans with visualization tools and metrics to better<br>track, rank and forecast team and player cost-per-win efficiency
+          Provide visualization tools and metrics to better<br>track, rank and forecast team and player cost per win efficiency
         </div>
         <hr class="home-rule">
         <div class="home-cta">Choose a tool to get started</div>
@@ -7203,7 +7203,7 @@ if False:  # noqa: dead code preserved for reference
         tbl = tbl.sort_values(sort_col, ascending=sort_asc).reset_index(drop=True)
 
         show_cols = [
-            "League", "Division", "Team", "W2021", "W2022", "W2023", "W2024", "W2025",
+            "League", "Division", "Team", "W2025", "W2024", "W2023", "W2022", "W2021",
             "Avg_Wins", "Avg_Pay_M", "Avg_$/WAR_M", "Avg_Gap_M",
             "Playoff_Apps", "WS_Apps", "WS_Wins", "Playoff_Rnds",
         ]
@@ -7232,7 +7232,7 @@ if False:  # noqa: dead code preserved for reference
             .rename(columns={
                 "Avg_Gap_M":   "$vsLine ($M)",
                 "Avg_Pay_M":   "Avg Payroll ($M)",
-                "Avg_$/WAR_M": "$/WAR ($M)",
+                "Avg_$/WAR_M": "$/fWAR ($M)",
                 "Avg_Wins":    "Avg W",
                 "Playoff_Apps":"Playoffs",
                 "WS_Apps":     "WS Apps",
@@ -7988,7 +7988,7 @@ def _render_rankings_page():
             )
 
     # ── Multi-year summary ────────────────────────────────────────────────────
-    with st.expander("📊 Multi-Year Summary (2021–2025)", expanded=False):
+    with st.expander("📊 Multi-Year Summary (2025–2021)", expanded=False):
         st.caption(
             "5-year averages from the efficiency analysis. "
             "**Avg Gap** = average dollars above/below the cost-effective line per season — "
@@ -8058,7 +8058,7 @@ def _render_rankings_page():
             st.markdown(
                 f"<div style='font-size:0.88rem;color:#d6e8f8;font-weight:600;margin-bottom:0.5rem;'>"
                 f"fWAR explains <span style='color:#60a5fa;'>{_r2 * 100:.1f}%</span> of win variation "
-                f"across {len(_f1)} team-seasons (2021–2025). Each additional fWAR is worth roughly "
+                f"across {len(_f1)} team-seasons (2025–2021). Each additional fWAR is worth roughly "
                 f"<span style='color:#60a5fa;'>{_coef[0]:.2f}</span> wins.</div>",
                 unsafe_allow_html=True,
             )
@@ -8091,7 +8091,7 @@ def _render_rankings_page():
                              annotation_font_color="#3b6fd4")
 
             fig_f1.update_layout(**_pt(
-                title="Team fWAR vs Actual Wins (2021–2025)",
+                title="Team fWAR vs Actual Wins (2025–2021)",
                 xaxis=dict(title="Total Team fWAR"),
                 yaxis=dict(title="Actual Wins"),
                 height=440, showlegend=True,
@@ -8124,11 +8124,33 @@ def _render_rankings_page():
             _eff_tbl["Tier"] = _eff_tbl["Avg_Gap"].apply(lambda g: _eff_tier(g)[0])
             _eff_tbl = _eff_tbl.sort_values("Avg_Gap")
 
-            st.markdown("#### Efficiency vs Postseason Outcomes (2021–2025)")
+            st.markdown("#### Efficiency vs Postseason Outcomes (2025–2021)")
+
+            # 5-tier ranking with color coding
+            _n_teams = len(_eff_tbl)
+            _tier_size = max(1, _n_teams // 5)
+            def _rank_tier(idx):
+                if idx < _tier_size:     return "Top Tier"
+                if idx < _tier_size * 2: return "Above Average"
+                if idx < _tier_size * 3: return "Average"
+                if idx < _tier_size * 4: return "Below Average"
+                return "Bottom"
+            _eff_tbl["Ranking"] = [_rank_tier(i) for i in range(len(_eff_tbl))]
+
+            _RANK_CLR = {"Top Tier": "#14532d", "Above Average": "#1a3a20",
+                         "Average": "", "Below Average": "#2d1f0c", "Bottom": "#2d0c0c"}
+            def _tier_clr(row):
+                bg = _RANK_CLR.get(row.get("Ranking", ""), "")
+                return [f"background-color:{bg}"] * len(row) if bg else [""] * len(row)
+
+            _eff_disp = _eff_tbl.rename(columns={
+                "Avg_Gap": "Avg Gap ($M)", "Playoff_Apps": "Playoff Apps",
+                "WS_Apps": "WS Appearances", "WS_Wins": "WS Wins",
+                "Tier": "Efficiency Tier",
+            })
             st.dataframe(
-                _eff_tbl.rename(columns={"Avg_Gap": "Avg Gap ($M)", "Playoff_Apps": "Playoff Apps",
-                                          "WS_Apps": "WS Appearances", "WS_Wins": "WS Wins",
-                                          "Tier": "Efficiency Tier"}),
+                _eff_disp.style.apply(_tier_clr, axis=1).format(
+                    {"Avg Gap ($M)": "{:.1f}"}, na_rep="—"),
                 hide_index=True, use_container_width=True, height=400,
             )
 
