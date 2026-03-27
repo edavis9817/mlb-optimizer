@@ -7661,7 +7661,7 @@ def _render_rankings_page():
 .rk-hdr .rk-sub{font-size:0.72rem;color:#7a9ebc;margin-top:0.15rem;}
 .rk-answer{background:#18243a;border:1px solid #1e3250;border-radius:10px;
   padding:0.7rem 0.8rem;text-align:center;}
-.rk-answer .rk-q{font-size:0.68rem;color:#93b8d8;text-transform:uppercase;
+.rk-answer .rk-q{font-size:0.68rem;color:#93b8d8;
   letter-spacing:0.05em;margin-bottom:0.2rem;font-weight:600;}
 .rk-answer .rk-team{font-size:1.25rem;font-weight:800;color:#d6e8f8;line-height:1.1;}
 .rk-answer .rk-val{font-size:0.78rem;color:#93b8d8;margin-top:0.2rem;}
@@ -7771,7 +7771,7 @@ def _render_rankings_page():
 
     with qa1:
         st.markdown(_qa(
-            "🏆", "Most Efficient",
+            "🏆", "MOST EFFICIENT",
             _full(_best_eff),
             f"${_best_eff['dollar_gap_M']:.0f}M below the line",
             "#1e4a1e",
@@ -7779,7 +7779,7 @@ def _render_rankings_page():
         ), unsafe_allow_html=True)
     with qa2:
         st.markdown(_qa(
-            "📈", "Top Overperformer",
+            "📈", "TOP OVERPERFORMER",
             _full(_overperf),
             f"+{_overperf['wins_vs_pred']:.1f} wins vs forecast",
             "#0c2218",
@@ -7787,7 +7787,7 @@ def _render_rankings_page():
         ), unsafe_allow_html=True)
     with qa3:
         st.markdown(_qa(
-            "💰", "Best $ per fWAR",
+            "💰", "BEST $ PER fWAR",
             _full(_best_dpw),
             f"${_best_dpw['DPW']:.1f}M per fWAR",
             "#1a1228",
@@ -7795,7 +7795,7 @@ def _render_rankings_page():
         ), unsafe_allow_html=True)
     with qa4:
         st.markdown(_qa(
-            "🔴", "Least Efficient Spending",
+            "🔴", "LEAST EFFICIENT SPENDING",
             _full(_worst_eff),
             f"${_worst_eff['dollar_gap_M']:.0f}M above the line",
             "#280c0c",
@@ -7803,14 +7803,14 @@ def _render_rankings_page():
         ), unsafe_allow_html=True)
     with qa5:
         st.markdown(_qa(
-            "⭐", "Top fWAR",
+            "⭐", "TOP fWAR",
             _full(_top_war),
             f"{_top_war['team_WAR']:.1f} total fWAR",
             tooltip="Highest total roster fWAR — sum of all player contributions above replacement",
         ), unsafe_allow_html=True)
     with qa6:
         st.markdown(_qa(
-            "🏅", "Most Wins",
+            "🏅", "MOST WINS",
             _full(_top_wins),
             f"{int(_top_wins['Wins'])} wins",
             tooltip="Highest regular-season win total for the selected year",
@@ -8604,56 +8604,110 @@ def _render_team_analysis_page():
     # ── Tab 1 — Roster ───────────────────────────────────────────────────
     with tt1:
         if not team_data.empty:
-            # Build display table directly from enriched data
-            _rtbl = pd.DataFrame()
-            _rtbl["Player"] = team_data["full_name"].values
-            _rtbl["Pos"] = team_data.get("position_primary", team_data.get("position", pd.Series())).values
-            _rtbl["Status"] = team_data["status"].apply(
-                lambda s: "60-Day IL" if "60" in str(s) else "15-Day IL" if "15" in str(s) else
-                          "10-Day IL" if "10" in str(s) else "Restricted" if "Restrict" in str(s) else "Active"
-            ).values
-            _rtbl["Stage"] = team_data.get("stage_display", team_data.get("contract_stage", pd.Series())).values
-            _rtbl["Age"] = team_data["age"].values
-            _rtbl["'26 Salary $M"] = team_data["salary_2026_M"].values
-            _rtbl["Contract"] = team_data.get("pay_contract", pd.Series(dtype=str)).values
-            _rtbl["FA Year"] = team_data.get("fa_year", pd.Series(dtype=float)).values
-            _rtbl["Bats"] = team_data.get("bats", pd.Series(dtype=str)).values
-            _rtbl["Throws"] = team_data.get("throws", pd.Series(dtype=str)).values
+            # ── Merge 2025 fWAR from combined stats ──────────────────────
+            _td = team_data.copy()
+            try:
+                _s_csv = _data_url("data/mlb_combined_2021_2025.csv")
+                _s_all = _read_csv(_s_csv, low_memory=False)
+                _s_all.columns = [c.strip() for c in _s_all.columns]
+                _s_all["Year"] = pd.to_numeric(_s_all["Year"], errors="coerce")
+                _s_all["WAR_Total"] = pd.to_numeric(_s_all.get("WAR_Total", pd.Series()), errors="coerce")
+                _s25 = _s_all[_s_all["Year"] == 2025][["Player", "WAR_Total"]].drop_duplicates("Player", keep="first")
+                _s25["_jk"] = _s25["Player"].str.lower().str.strip()
+                _td["_jk"] = _td["full_name"].apply(_fix_player_name).str.lower().str.strip()
+                _td = _td.merge(_s25[["_jk", "WAR_Total"]], on="_jk", how="left")
+                _td = _td.drop(columns=["_jk"])
+            except Exception:
+                _td["WAR_Total"] = None
 
-            _show_restricted = st.checkbox("Include Restricted (minor league) players",
-                                           value=False, key="ta_show_restricted")
-            if not _show_restricted:
-                _rtbl = _rtbl[_rtbl["Status"] != "Restricted"].reset_index(drop=True)
+            # ── Build base table ─────────────────────────────────────────
+            def _build_roster_tbl(src_df):
+                tbl = pd.DataFrame()
+                tbl["Player"] = src_df["full_name"].values
+                tbl["Pos"] = src_df.get("position_primary", src_df.get("position", pd.Series())).values
+                # Stage: rename FA to Free Agent
+                _stg = src_df.get("stage_display", src_df.get("contract_stage", pd.Series())).copy()
+                _stg = _stg.replace({"FA": "Free Agent"})
+                tbl["Stage"] = _stg.values
+                tbl["Age"] = src_df["age"].values
+                tbl["'26 Salary $M"] = src_df["salary_2026_M"].values
+                tbl["'25 fWAR"] = src_df.get("WAR_Total", pd.Series(dtype=float)).values
+                tbl["Contract"] = src_df.get("pay_contract", pd.Series(dtype=str)).values
+                tbl["Bats"] = src_df.get("bats", pd.Series(dtype=str)).values
+                tbl["Throws"] = src_df.get("throws", pd.Series(dtype=str)).values
+                tbl = tbl.sort_values("'26 Salary $M", ascending=False).reset_index(drop=True)
+                tbl.insert(0, "#", range(1, len(tbl) + 1))
+                return tbl
 
-            _rtbl = _rtbl.sort_values("'26 Salary $M", ascending=False).reset_index(drop=True)
-            _rtbl.insert(0, "#", range(1, len(_rtbl) + 1))
-
-            _STG_CLR = {"Pre-Arb": "#14532d", "Arb": "#0c2a2a", "Guaranteed": "#0c1a2d"}
+            _STG_CLR = {"Pre-Arb": "#14532d", "Arb": "#0c2a2a", "Guaranteed": "#0c1a2d", "Free Agent": "#1a0c28"}
             def _stage_clr(row):
                 stg = str(row.get("Stage", ""))
-                if "IL" in str(row.get("Status", "")):
-                    return ["background-color:#2d0c0c;color:#fca5a5"] * len(row)
                 bg = _STG_CLR.get(stg, "")
                 return [f"background-color:{bg}66"] * len(row) if bg else [""] * len(row)
 
-            _n_act = len(_rtbl[_rtbl["Status"] == "Active"])
-            _n_il_d = len(_rtbl[_rtbl["Status"].str.contains("IL", na=False)])
-            st.markdown(f"##### 40-Man Roster ({_n_act} active, {_n_il_d} on IL)")
+            _fmt = {"Age": "{:.0f}", "'26 Salary $M": "${:.2f}M", "'25 fWAR": "{:.1f}"}
+
+            # Split by status
+            _td["_status_cat"] = _td["status"].apply(
+                lambda s: "IL" if "Injured" in str(s) else "Restricted" if "Restrict" in str(s) else "Active"
+            )
+            _active_df = _td[_td["_status_cat"] == "Active"]
+            _il_df = _td[_td["_status_cat"] == "IL"]
+            _restricted_df = _td[_td["_status_cat"] == "Restricted"]
+
+            # ── Active Roster (26-Man) ───────────────────────────────────
+            st.markdown(f"##### Active Roster ({len(_active_df)} players)")
             st.markdown(
                 "<div style='font-size:0.78rem;color:#7a9ebc;margin-bottom:0.4rem;'>"
-                "Sorted by 2026 salary (highest first). Color: "
+                "Sorted by 2026 salary. Color: "
                 "<span style='color:#22c55e;'>Pre-Arb</span> · "
                 "<span style='color:#14b8a6;'>Arb</span> · "
                 "<span style='color:#3b82f6;'>Guaranteed</span> · "
-                "<span style='color:#fca5a5;'>IL</span></div>",
+                "<span style='color:#9333ea;'>Free Agent</span></div>",
                 unsafe_allow_html=True,
             )
-            st.dataframe(
-                _rtbl.style.apply(_stage_clr, axis=1).format(
-                    {"Age": "{:.0f}", "'26 Salary $M": "${:.2f}M", "FA Year": "{:.0f}"}, na_rep="—"),
-                hide_index=True, use_container_width=True,
-                height=min(60 + len(_rtbl) * 35, 700),
-            )
+            if not _active_df.empty:
+                _act_tbl = _build_roster_tbl(_active_df)
+                st.dataframe(
+                    _act_tbl.style.apply(_stage_clr, axis=1).format(
+                        {k: v for k, v in _fmt.items() if k in _act_tbl.columns}, na_rep="—"),
+                    hide_index=True, use_container_width=True,
+                    height=min(60 + len(_act_tbl) * 35, 600),
+                )
+
+            # ── Injured List ─────────────────────────────────────────────
+            if not _il_df.empty:
+                # Add IL type column
+                _il_tbl = _build_roster_tbl(_il_df)
+                _il_tbl.insert(2, "IL Type", _il_df["status"].apply(
+                    lambda s: "60-Day" if "60" in str(s) else "15-Day" if "15" in str(s) else "10-Day"
+                ).values)
+                st.markdown(f"##### 🏥 Injured List ({len(_il_df)} players)")
+                st.dataframe(
+                    _il_tbl.style.apply(
+                        lambda row: ["background-color:#2d0c0c66;color:#fca5a5"] * len(row), axis=1
+                    ).format({k: v for k, v in _fmt.items() if k in _il_tbl.columns}, na_rep="—"),
+                    hide_index=True, use_container_width=True,
+                    height=min(60 + len(_il_tbl) * 35, 400),
+                )
+
+            # ── Restricted (Minor League 40-Man) ─────────────────────────
+            if not _restricted_df.empty:
+                _res_tbl = _build_roster_tbl(_restricted_df)
+                st.markdown(f"##### Minor League / Restricted ({len(_restricted_df)} players)")
+                st.markdown(
+                    "<div style='font-size:0.75rem;color:#4a687e;margin-bottom:0.3rem;'>"
+                    "Players on the 40-man roster assigned to minor leagues. "
+                    "Still occupy a 40-man spot but are not on the active MLB roster.</div>",
+                    unsafe_allow_html=True,
+                )
+                st.dataframe(
+                    _res_tbl.style.apply(
+                        lambda row: ["background-color:#1a1a2e44"] * len(row), axis=1
+                    ).format({k: v for k, v in _fmt.items() if k in _res_tbl.columns}, na_rep="—"),
+                    hide_index=True, use_container_width=True,
+                    height=min(60 + len(_res_tbl) * 35, 500),
+                )
         else:
             st.info(f"No roster data available for {sel_team}.")
 
