@@ -15,6 +15,8 @@ import hashlib
 import json
 import os
 import sys
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import numpy as np
 import pandas as pd
@@ -166,13 +168,19 @@ def _read_csv(path: str, **kwargs) -> pd.DataFrame:
         # Try to use cached file if it exists
         if os.path.exists(cache_file):
             try:
-                # Check ETag with HEAD request to detect changes
-                cached_etag = metadata.get(cache_key, {}).get("etag")
+                cached_meta  = metadata.get(cache_key, {})
+                cached_etag  = cached_meta.get("etag")
+                checked_at   = cached_meta.get("checked_at", 0)
                 if cached_etag:
+                    # Skip HEAD request if we verified within the last hour
+                    if time.time() - checked_at < 3600:
+                        return _fix_player_col(pd.read_csv(cache_file, **kwargs))
                     head_resp = _requests.head(path, timeout=30)
                     current_etag = head_resp.headers.get("ETag", "")
                     if current_etag and current_etag == cached_etag:
-                        # File unchanged—use cached version
+                        # File unchanged—update timestamp and use cached version
+                        metadata[cache_key]["checked_at"] = time.time()
+                        _save_etag_metadata(metadata)
                         return _fix_player_col(pd.read_csv(cache_file, **kwargs))
             except Exception:
                 # If HEAD check fails, fall back to using cached file anyway
@@ -180,22 +188,22 @@ def _read_csv(path: str, **kwargs) -> pd.DataFrame:
                     return _fix_player_col(pd.read_csv(cache_file, **kwargs))
                 except Exception:
                     pass  # Fall through to re-download
-        
+
         # Download and cache
         try:
             resp = _requests.get(path, timeout=30)
             resp.raise_for_status()
-            
+
             # Save to cache
             with open(cache_file, "wb") as f:
                 f.write(resp.content)
-            
-            # Update metadata with ETag
+
+            # Update metadata with ETag and check timestamp
             etag = resp.headers.get("ETag", "")
             if etag:
-                metadata[cache_key] = {"etag": etag, "url": path}
+                metadata[cache_key] = {"etag": etag, "url": path, "checked_at": time.time()}
                 _save_etag_metadata(metadata)
-            
+
             return _fix_player_col(pd.read_csv(_io.BytesIO(resp.content), **kwargs))
         except Exception as e:
             # If download fails but cache exists, use stale cache
@@ -219,29 +227,36 @@ def _read_excel(path: str, **kwargs) -> pd.DataFrame:
         # Try to use cached file if it exists
         if os.path.exists(cache_file):
             try:
-                cached_etag = metadata.get(cache_key, {}).get("etag")
+                cached_meta  = metadata.get(cache_key, {})
+                cached_etag  = cached_meta.get("etag")
+                checked_at   = cached_meta.get("checked_at", 0)
                 if cached_etag:
+                    # Skip HEAD request if we verified within the last hour
+                    if time.time() - checked_at < 3600:
+                        return _fix_player_col(pd.read_excel(cache_file, **kwargs))
                     head_resp = _requests.head(path, timeout=30)
                     current_etag = head_resp.headers.get("ETag", "")
                     if current_etag and current_etag == cached_etag:
+                        metadata[cache_key]["checked_at"] = time.time()
+                        _save_etag_metadata(metadata)
                         return _fix_player_col(pd.read_excel(cache_file, **kwargs))
             except Exception:
                 try:
                     return _fix_player_col(pd.read_excel(cache_file, **kwargs))
                 except Exception:
                     pass
-        
+
         # Download and cache
         try:
             resp = _requests.get(path, timeout=30)
             resp.raise_for_status()
-            
+
             with open(cache_file, "wb") as f:
                 f.write(resp.content)
-            
+
             etag = resp.headers.get("ETag", "")
             if etag:
-                metadata[cache_key] = {"etag": etag, "url": path}
+                metadata[cache_key] = {"etag": etag, "url": path, "checked_at": time.time()}
                 _save_etag_metadata(metadata)
             
             return _fix_player_col(pd.read_excel(_io.BytesIO(resp.content), **kwargs))
@@ -1302,19 +1317,29 @@ def _cached_carousel_images(headshots_dir: str, n: int = 90, seed: int = 42,
         mlbam = _cached_mlbam_lookup(_RAZZBALL_PATH)
         players = list(player_list)
         rng.shuffle(players)
-        result = []
+
+        # Build (index, url) pairs so we can restore order after parallel fetch
+        candidates = []
         for name in players[:n]:
             mid = mlbam.get(name)
-            if not mid:
-                continue
-            url = _headshot_url(mid, width=213)
+            if mid:
+                candidates.append((name, _headshot_url(mid, width=213)))
+
+        def _fetch(item):
+            _, url = item
             try:
                 resp = _requests.get(url, timeout=4)
                 if resp.status_code == 200 and len(resp.content) > 8000:
-                    # Skip generic silhouettes (< 8KB) — only use real photos
-                    result.append(base64.b64encode(resp.content).decode())
+                    return base64.b64encode(resp.content).decode()
             except Exception:
-                continue
+                pass
+            return None
+
+        result = []
+        with ThreadPoolExecutor(max_workers=12) as executor:
+            for img in executor.map(_fetch, candidates):
+                if img is not None:
+                    result.append(img)
         return result
 
     if headshots_dir.startswith("http"):
@@ -5830,11 +5855,10 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
         _mlb_ids = _cached_mlbam_lookup(_RAZZBALL_PATH)
 
         # ── Tabs ──────────────────────────────────────────────────────────
-        t1, t2, t3, t4, t5, t6, t7, t8 = st.tabs([
+        t1, t2, t3, t5, t6, t7, t8 = st.tabs([
             "Cost Effective Line",
             "PPEL",
             "Age Trajectory",
-            "By Team",
             "Efficient Players",
             "Residual Analysis",
             "Pre-Arb Explorer",
@@ -6162,10 +6186,11 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                 "<div style='margin-top:1rem;font-size:0.92rem;font-weight:700;color:#d6e8f8;'>"
                 "Top 25 Most Underpaid Players</div>"
                 "<div style='font-size:0.76rem;color:#7a9ebc;margin-bottom:0.4rem;'>"
-                "Ranked by PPR (lowest = most underpaid). Adjusts with all filters above.</div>",
+                "Ranked by PPR (lowest = most underpaid). Adjusts with all filters above. Excludes Pre-Arbitration players and players under 1 fWAR.</div>",
                 unsafe_allow_html=True,
             )
-            _top25 = df.nsmallest(25, "PPR")[["Player","Team","Year","WAR_Total","Salary_M","predicted","PPR","Stage_Clean"]].copy()
+            _top25_pool = df[(df["Stage_Clean"] != "Pre-Arb") & (df["WAR_Total"] >= 1.0)]
+            _top25 = _top25_pool.nsmallest(25, "PPR")[["Player","Team","Year","WAR_Total","Salary_M","predicted","PPR","Stage_Clean"]].copy()
             _top25.insert(0, "#", range(1, len(_top25) + 1))
             _top25.columns = ["#", "Player", "Team", "Year", "fWAR", "Salary $M", "Expected $M", "PPR", "Stage"]
             _top25["Year"] = _top25["Year"].astype(int)
@@ -6263,29 +6288,6 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                 }).apply(lambda row: ["background-color:#0c221866"] * len(row) if row["#"] <= 5 else [""] * len(row), axis=1),
                 hide_index=True, use_container_width=True, height=min(60 + 25 * 35, 720),
             )
-
-        # ── Tab 4 — By Team ───────────────────────────────────────────────
-        with t4:
-            _avail_t = sorted(df["Team"].unique())
-            _def_t   = _avail_t[:min(4, len(_avail_t))]
-            _sel_t   = st.multiselect("Teams", _avail_t, default=_def_t, key="ef_team_sel")
-            if not _sel_t:
-                st.info("Select at least one team.")
-            else:
-                fig4 = go.Figure()
-                for _tn, _tg in df[df["Team"].isin(_sel_t)].groupby("Team"):
-                    fig4.add_trace(go.Scatter(
-                        x=_tg["WAR_Total"], y=_tg["Salary_M"],
-                        mode="markers", name=_tn, marker=dict(size=8),
-                        text=_tg["Player"] + " (" + _tg["Year"].astype(str) + ")",
-                        hovertemplate="%{text}<br>WAR: %{x:.1f}  Salary: $%{y:.2f}M<extra></extra>",
-                    ))
-                fig4.update_layout(**_pt(
-                    title="WAR vs Salary by Team",
-                    xaxis=dict(title="WAR"), yaxis=dict(title="Salary ($M)"),
-                    height=640, showlegend=True,
-                ))
-                st.plotly_chart(fig4, use_container_width=True)
 
         # ── Tab 5 — Efficient Players ─────────────────────────────────────
         with t5:
