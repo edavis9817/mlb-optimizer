@@ -6135,9 +6135,9 @@ padding:12px 16px;margin-top:4px;">
     </div>
     <div>
       <span style="font-weight:700;color:#a8c8e8;">Dot colours (Career Stage)</span><br>
-      <span style="color:#06d6a0;">●</span> Free Agent &nbsp;
-      <span style="color:#fbbf24;">●</span> Arbitration &nbsp;
-      <span style="color:#38bdf8;">●</span> Pre-Arb.
+      <span style="color:#06d6a0;">●</span> Free Agent<br>
+      <span style="color:#fbbf24;">●</span> Arbitration<br>
+      <span style="color:#38bdf8;">●</span> Pre-Arb.<br>
       Switch colour mode in the Display panel.
     </div>
     <div>
@@ -6188,7 +6188,7 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                 "Ranked by PPR (lowest = most underpaid). Adjusts with all filters above. Excludes Pre-Arbitration players and players under 1 fWAR.</div>",
                 unsafe_allow_html=True,
             )
-            _top25_pool = df[(df["Stage_Clean"] != "Pre-Arb") & (df["WAR_Total"] >= 1.0)]
+            _top25_pool = df[~df["Stage_Clean"].str.contains("Pre.Arb|Pre-Arb|Pre_Arb|Pre Arb|Pre-Arbitration|PreArb", case=False, na=False, regex=True) & (df["WAR_Total"] >= 1.0)]
             _top25 = _top25_pool.nsmallest(25, "PPR")[["Player","Team","Year","WAR_Total","Salary_M","predicted","PPR","Stage_Clean"]].copy()
             _top25.insert(0, "#", range(1, len(_top25) + 1))
             _top25.columns = ["#", "Player", "Team", "Year", "fWAR", "Salary $M", "Expected $M", "PPR", "Stage"]
@@ -6198,7 +6198,7 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                     "fWAR": "{:.1f}", "Salary $M": "{:.1f}",
                     "Expected $M": "{:.1f}", "PPR": "{:.3f}",
                 }).apply(lambda row: ["background-color:#0c221866"] * len(row) if row["#"] <= 5 else [""] * len(row), axis=1),
-                hide_index=True, use_container_width=True, height=min(60 + 25 * 35, 720),
+                hide_index=True, use_container_width=True, height=385,
             )
 
         # ── Tab 3 — Age Trajectory ────────────────────────────────────────
@@ -6805,12 +6805,20 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                 # WAR trajectory lines, one per player, coloured by trend
                 fig_pa = go.Figure()
                 _trend_map = dict(zip(_pa_summary["Player"], _pa_summary["Trend"]))
+                _legend_shown = set()
                 for _pname, _pgrp in _pa_df.groupby("Player"):
-                    _t_color = _TREND_COLORS.get(_trend_map.get(_pname, "Neutral"), "#fbbf24")
+                    _trend = _trend_map.get(_pname, "Neutral")
+                    _t_color = _TREND_COLORS.get(_trend, "#fbbf24")
                     _pg = _pgrp.sort_values("Year")
+                    _show_leg = _trend not in _legend_shown
+                    if _show_leg:
+                        _legend_shown.add(_trend)
                     fig_pa.add_trace(go.Scatter(
                         x=_pg["Year"].astype(int), y=_pg["WAR_Total"],
-                        mode="lines+markers", name=_pname,
+                        mode="lines+markers",
+                        name=_trend,
+                        legendgroup=_trend,
+                        showlegend=_show_leg,
                         line=dict(color=_t_color, width=1.5),
                         marker=dict(size=6, color=_t_color),
                         hovertemplate=(
@@ -6819,15 +6827,7 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                             f"<br>Team: {_pg['Team'].iloc[-1]}"
                             "<extra></extra>"
                         ),
-                        showlegend=False,
                         opacity=0.65,
-                    ))
-                # Legend proxy traces
-                for _tn, _tc in _TREND_COLORS.items():
-                    fig_pa.add_trace(go.Scatter(
-                        x=[None], y=[None], mode="lines",
-                        line=dict(color=_tc, width=2.5),
-                        name=_tn, showlegend=True,
                     ))
                 fig_pa.update_layout(**_pt(
                     title="Pre-Arbitration Player WAR Trajectories",
