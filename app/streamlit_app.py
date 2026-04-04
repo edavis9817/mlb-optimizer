@@ -5745,7 +5745,8 @@ div[data-testid='column']:first-of-type .stSlider{
             st.rerun()
         if st.button("✕  Clear All Filters", use_container_width=True, key="ef_clear_btn"):
             for _k in ("ef_years", "ef_teams", "ef_stages"):
-                st.session_state[_k] = []
+                if _k in st.session_state:
+                    del st.session_state[_k]
             st.rerun()
 
     with col_m:
@@ -6819,7 +6820,8 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                 with _pa_reset_col:
                     st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
                     if st.button("↺  Reset", use_container_width=True, key="ef_pa_player_reset"):
-                        st.session_state["ef_pa_player_sel"] = []
+                        if "ef_pa_player_sel" in st.session_state:
+                            del st.session_state["ef_pa_player_sel"]
                         st.rerun()
 
                 if _pa_player_sel:
