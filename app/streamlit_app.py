@@ -7780,19 +7780,18 @@ def _render_rankings_page():
 
     # ── Quick-answer highlight cards ─────────────────────────────────────────
     def _qa(icon, question, team, value_str, bdr="#1e3250", tooltip="", team_abbr=""):
-        _tip = f" title='{tooltip}'" if tooltip else ""
         _logo = ""
         _link_open = ""
         _link_close = ""
         if team_abbr:
             _logo_u = _team_logo_url(team_abbr)
-            _logo = (f"<img src='{_logo_u}' width='32' height='32' style='object-fit:contain;"
+            _logo = (f"<img src='{_logo_u}' width='36' height='36' style='object-fit:contain;"
                      f"margin-bottom:4px;' onerror=\"this.style.display='none'\">")
             _link_open = f"<a href='?page=team&sel_team={team_abbr}' target='_self' style='text-decoration:none;color:inherit;'>"
             _link_close = "</a>"
         return (
             f"{_link_open}"
-            f"<div class='rk-answer' style='border-color:{bdr};cursor:pointer;'{_tip}>"
+            f"<div class='rk-answer' style='border-color:{bdr};cursor:pointer;'>"
             f"{_logo}"
             f"<div class='rk-q'>{question}</div>"
             f"<div class='rk-team'>{team}</div>"
@@ -8745,18 +8744,25 @@ def _render_team_analysis_page():
         st.session_state["team_analysis_sel"] = _qp_sel
     sel_team = st.session_state.get("team_analysis_sel")
 
+    # CSS to hide the Streamlit button behind the logo overlay
+    st.markdown("""<style>
+    div[data-testid="stButton"] > button[key^="tpick_"] {
+        opacity: 0 !important; height: 70px !important;
+    }
+    </style>""", unsafe_allow_html=True)
+
     def _logo_card(tm, is_active):
         _url = _team_logo_url(tm)
-        _bdr = "2px solid #3b82f6" if is_active else "1px solid #1e3a5c"
-        _bg = "#18243a" if is_active else "#0d1b2a"
-        _shadow = "box-shadow:0 0 10px #3b82f644;" if is_active else ""
+        _bdr = "2px solid #3b82f6" if is_active else "1px solid transparent"
+        _bg = "#18243a" if is_active else "transparent"
+        _shadow = "box-shadow:0 0 12px #3b82f644;" if is_active else ""
         return (
             f'<div style="background:{_bg};border:{_bdr};border-radius:8px;'
-            f'padding:6px;text-align:center;{_shadow}cursor:pointer;" '
+            f'padding:6px;text-align:center;{_shadow}" '
             f'title="{_TEAM_CITIES.get(tm, "")} {_ABBR_TO_FULL.get(tm, tm)}">'
-            f'<img src="{_url}" width="40" height="40" style="object-fit:contain;" '
-            f'onerror="this.outerHTML=\'<div style=&quot;font-size:0.9rem;font-weight:700;'
-            f'color:#e8f4ff;line-height:40px;&quot;>{tm}</div>\'">'
+            f'<img src="{_url}" width="55" height="55" style="object-fit:contain;" '
+            f'onerror="this.outerHTML=\'<div style=&quot;font-size:1rem;font-weight:700;'
+            f'color:#e8f4ff;line-height:55px;&quot;>{tm}</div>\'">'
             f'</div>'
         )
 
@@ -8779,9 +8785,9 @@ def _render_team_analysis_page():
                     if st.button(tm, key=f"tpick_{tm}", use_container_width=True):
                         st.session_state["team_analysis_sel"] = tm
                         st.rerun()
-                    # Logo overlay
+                    # Logo overlay — covers the invisible button
                     st.markdown(
-                        f"<div style='margin-top:-2.8rem;pointer-events:none;'>"
+                        f"<div style='margin-top:-4.5rem;pointer-events:none;'>"
                         f"{_logo_card(tm, is_active)}</div>",
                         unsafe_allow_html=True,
                     )
