@@ -7779,15 +7779,26 @@ def _render_rankings_page():
     ], title="📖 Terms & Definitions")
 
     # ── Quick-answer highlight cards ─────────────────────────────────────────
-    def _qa(icon, question, team, value_str, bdr="#1e3250", tooltip=""):
+    def _qa(icon, question, team, value_str, bdr="#1e3250", tooltip="", team_abbr=""):
         _tip = f" title='{tooltip}'" if tooltip else ""
+        _logo = ""
+        _link_open = ""
+        _link_close = ""
+        if team_abbr:
+            _logo_u = _team_logo_url(team_abbr)
+            _logo = (f"<img src='{_logo_u}' width='32' height='32' style='object-fit:contain;"
+                     f"margin-bottom:4px;' onerror=\"this.style.display='none'\">")
+            _link_open = f"<a href='?page=team&sel_team={team_abbr}' target='_self' style='text-decoration:none;color:inherit;'>"
+            _link_close = "</a>"
         return (
-            f"<div class='rk-answer' style='border-color:{bdr};cursor:help;'{_tip}>"
-            f"<div class='rk-icon'>{icon}</div>"
+            f"{_link_open}"
+            f"<div class='rk-answer' style='border-color:{bdr};cursor:pointer;'{_tip}>"
+            f"{_logo}"
             f"<div class='rk-q'>{question}</div>"
             f"<div class='rk-team'>{team}</div>"
             f"<div class='rk-val'>{value_str}</div>"
             f"</div>"
+            f"{_link_close}"
         )
 
     _best_eff  = yr_df.loc[yr_df["dollar_gap_M"].idxmin()]
@@ -7811,6 +7822,7 @@ def _render_rankings_page():
             f"${_best_eff['dollar_gap_M']:.0f}M below the line",
             "#1e4a1e",
             "This team won the most games relative to payroll $ spent",
+            team_abbr=_best_eff["Team"],
         ), unsafe_allow_html=True)
     with qa2:
         st.markdown(_qa(
@@ -7819,6 +7831,7 @@ def _render_rankings_page():
             f"+{_overperf['wins_vs_pred']:.1f} wins vs forecast",
             "#0c2218",
             "This team had the most wins relative to forecast based on payroll $ spent",
+            team_abbr=_overperf["Team"],
         ), unsafe_allow_html=True)
     with qa3:
         st.markdown(_qa(
@@ -7827,6 +7840,7 @@ def _render_rankings_page():
             f"${_best_dpw['DPW']:.1f}M per fWAR",
             "#1a1228",
             "Lowest cost per fWAR — the most production per dollar on the roster",
+            team_abbr=_best_dpw["Team"],
         ), unsafe_allow_html=True)
     with qa4:
         st.markdown(_qa(
@@ -7835,6 +7849,7 @@ def _render_rankings_page():
             f"${_worst_eff['dollar_gap_M']:.0f}M above the line",
             "#3d1f00",
             "This team spent the most payroll $ for level of wins earned",
+            team_abbr=_worst_eff["Team"],
         ), unsafe_allow_html=True)
     with qa5:
         st.markdown(_qa(
@@ -7842,6 +7857,7 @@ def _render_rankings_page():
             _full(_top_war),
             f"{_top_war['team_WAR']:.1f} total fWAR",
             tooltip="Highest total roster fWAR — sum of all player contributions above replacement",
+            team_abbr=_top_war["Team"],
         ), unsafe_allow_html=True)
     with qa6:
         st.markdown(_qa(
@@ -7849,7 +7865,88 @@ def _render_rankings_page():
             _full(_top_wins),
             f"{int(_top_wins['Wins'])} wins",
             tooltip="Highest regular-season win total for the selected year",
+            team_abbr=_top_wins["Team"],
         ), unsafe_allow_html=True)
+
+    # ── Player award boxes (top fWAR, best contract value, best stability) ──
+    try:
+        _paw_csv = _data_url("data/mlb_combined_2021_2025.csv")
+        _paw_df = _read_csv(_paw_csv, low_memory=False)
+        _paw_df.columns = [c.strip() for c in _paw_df.columns]
+        _paw_df["Year"] = pd.to_numeric(_paw_df["Year"], errors="coerce")
+        _paw_df["WAR_Total"] = pd.to_numeric(_paw_df["WAR_Total"], errors="coerce")
+        _paw_df["Salary_M"] = pd.to_numeric(_paw_df["Salary_M"], errors="coerce")
+        _paw_25 = _paw_df[_paw_df["Year"] == sel_year].dropna(subset=["WAR_Total"])
+
+        # Top fWAR player
+        _p_top_war = _paw_25.sort_values("WAR_Total", ascending=False).iloc[0] if not _paw_25.empty else None
+
+        # Best contract value (highest WAR/$M for players earning > $1M)
+        _paw_val = _paw_25[_paw_25["Salary_M"] > 1.0].copy()
+        _paw_val["_wpm"] = _paw_val["WAR_Total"] / _paw_val["Salary_M"].clip(lower=0.1)
+        _p_best_val = _paw_val.sort_values("_wpm", ascending=False).iloc[0] if not _paw_val.empty else None
+
+        # Best fWAR stability (WSR) — need multi-year data
+        _paw_all = _paw_df.dropna(subset=["WAR_Total"])
+        _wsr_grp = _paw_all.groupby("Player").agg(
+            _mean=("WAR_Total", "mean"), _std=("WAR_Total", "std"), _n=("Year", "nunique"),
+            Team=("Team", "last"),
+        ).reset_index()
+        _wsr_grp = _wsr_grp[_wsr_grp["_n"] >= 3].copy()
+        _wsr_grp["_std"] = _wsr_grp["_std"].fillna(0)
+        _wsr_grp["WSR"] = (_wsr_grp["_mean"] / (1 + _wsr_grp["_std"])).round(2)
+        _p_best_wsr = _wsr_grp.sort_values("WSR", ascending=False).iloc[0] if not _wsr_grp.empty else None
+
+        # MLBAM lookup for headshots
+        _mlbam = _cached_mlbam_lookup(_RAZZBALL_PATH)
+
+        def _player_card(title, player_name, team, value_line, sub_line=""):
+            mid = _mlbam.get(_fix_player_name(player_name), "")
+            if mid:
+                img_url = _headshot_url(mid, width=120)
+                img_html = f"<img src='{img_url}' width='60' height='60' style='border-radius:50%;object-fit:cover;margin-bottom:4px;' onerror=\"this.style.display='none'\">"
+            else:
+                img_html = ""
+            return (
+                f"<div class='rk-answer' style='border-color:#1e3a5c;'>"
+                f"<div class='rk-q'>{title}</div>"
+                f"{img_html}"
+                f"<div class='rk-team'>{player_name}</div>"
+                f"<div style='font-size:0.68rem;color:#7a9ebc;margin-top:1px;'>{team}</div>"
+                f"<div class='rk-val'>{value_line}</div>"
+                + (f"<div style='font-size:0.62rem;color:#4a687e;'>{sub_line}</div>" if sub_line else "")
+                + "</div>"
+            )
+
+        pa1, pa2, pa3 = st.columns(3)
+        if _p_top_war is not None:
+            with pa1:
+                st.markdown(_player_card(
+                    f"#1 fWAR ({sel_year})",
+                    str(_p_top_war["Player"]),
+                    str(_p_top_war["Team"]),
+                    f"{_p_top_war['WAR_Total']:.1f} fWAR",
+                ), unsafe_allow_html=True)
+        if _p_best_val is not None:
+            with pa2:
+                st.markdown(_player_card(
+                    "TOP CONTRACT VALUE",
+                    str(_p_best_val["Player"]),
+                    str(_p_best_val["Team"]),
+                    f"{_p_best_val['_wpm']:.2f} fWAR/$M",
+                    f"{_p_best_val['WAR_Total']:.1f} fWAR · ${_p_best_val['Salary_M']:.1f}M",
+                ), unsafe_allow_html=True)
+        if _p_best_wsr is not None:
+            with pa3:
+                st.markdown(_player_card(
+                    "BEST fWAR STABILITY",
+                    str(_p_best_wsr["Player"]),
+                    str(_p_best_wsr["Team"]),
+                    f"{_p_best_wsr['WSR']:.2f} WSR",
+                    f"Avg {_p_best_wsr['_mean']:.1f} fWAR · {int(_p_best_wsr['_n'])} seasons",
+                ), unsafe_allow_html=True)
+    except Exception:
+        pass  # silently skip if data unavailable
 
     st.markdown("<div style='margin-top:0.8rem;'></div>", unsafe_allow_html=True)
 
@@ -8487,6 +8584,23 @@ def _render_rankings_page():
 # ---------------------------------------------------------------------------
 
 _ABBR_TO_FULL: dict[str, str] = {v: k for k, v in _PAYROLL_2026_TEAM_MAP.items()}
+_LOGO_FILE_NAMES: dict[str, str] = {
+    "ARI": "Arizona Diamondbacks", "ATH": "Oakland Athletics", "ATL": "Atlanta Braves",
+    "BAL": "Baltimore Orioles", "BOS": "Boston Red Sox", "CHC": "Chicago Cubs",
+    "CHW": "Chicago White Sox", "CIN": "Cincinnati Reds", "CLE": "Cleveland Guardians",
+    "COL": "Colorado Rockies", "DET": "Detroit Tigers", "HOU": "Houston Astros",
+    "KCR": "Kansas City Royals", "LAA": "Los Angeles Angels", "LAD": "Los Angeles Dodgers",
+    "MIA": "Miami Marlins", "MIL": "Milwaukee Brewers", "MIN": "Minnesota Twins",
+    "NYM": "New York Mets", "NYY": "New York Yankees", "PHI": "Philadelphia Phillies",
+    "PIT": "Pittsburgh Pirates", "SDP": "San Diego Padres", "SEA": "Seattle Mariners",
+    "SFG": "San Francisco Giants", "STL": "St. Louis Cardinals", "TBR": "Tampa Bay Rays",
+    "TEX": "Texas Rangers", "TOR": "Toronto Blue Jays", "WSN": "Washington Nationals",
+}
+
+
+def _team_logo_url(abbr: str) -> str:
+    """Return the R2 logo URL for a team abbreviation."""
+    return _data_url(f"logos/{_LOGO_FILE_NAMES.get(abbr, abbr)}.png")
 _TEAM_CITIES: dict[str, str] = {
     "ARI": "Arizona", "ATH": "Las Vegas", "ATL": "Atlanta", "BAL": "Baltimore",
     "BOS": "Boston", "CHC": "Chicago", "CHW": "Chicago", "CIN": "Cincinnati",
@@ -8625,42 +8739,50 @@ def _render_team_analysis_page():
         ("West",    ["ARI", "COL", "LAD", "SDP", "SFG"]),
     ]
 
-    if "team_analysis_sel" not in st.session_state:
-        st.session_state["team_analysis_sel"] = "NYY"
-    sel_team = st.session_state["team_analysis_sel"]
+    # Handle incoming team selection from rankings page link
+    _qp_sel = st.query_params.get("sel_team")
+    if _qp_sel and _qp_sel in [t for d in _AL_DIVS + _NL_DIVS for t in d[1]]:
+        st.session_state["team_analysis_sel"] = _qp_sel
+    sel_team = st.session_state.get("team_analysis_sel")
+
+    def _logo_card(tm, is_active):
+        _url = _team_logo_url(tm)
+        _bdr = "2px solid #3b82f6" if is_active else "1px solid #1e3a5c"
+        _bg = "#18243a" if is_active else "#0d1b2a"
+        _shadow = "box-shadow:0 0 10px #3b82f644;" if is_active else ""
+        return (
+            f'<div style="background:{_bg};border:{_bdr};border-radius:8px;'
+            f'padding:6px;text-align:center;{_shadow}cursor:pointer;" '
+            f'title="{_TEAM_CITIES.get(tm, "")} {_ABBR_TO_FULL.get(tm, tm)}">'
+            f'<img src="{_url}" width="40" height="40" style="object-fit:contain;" '
+            f'onerror="this.outerHTML=\'<div style=&quot;font-size:0.9rem;font-weight:700;'
+            f'color:#e8f4ff;line-height:40px;&quot;>{tm}</div>\'">'
+            f'</div>'
+        )
 
     def _render_league_grid(league_name, divs):
         st.markdown(
-            f"<div style='font-size:0.85rem;font-weight:700;color:#d6e8f8;text-align:center;"
+            f"<div style='font-size:0.82rem;font-weight:700;color:#d6e8f8;text-align:center;"
             f"margin-bottom:0.3rem;letter-spacing:0.1em;'>{league_name}</div>",
             unsafe_allow_html=True,
         )
         for div_name, teams in divs:
             st.markdown(
-                f"<div style='font-size:0.65rem;color:#d6e8f8;font-weight:600;"
-                f"margin:0.15rem 0 0.1rem;'>{div_name}</div>",
+                f"<div style='font-size:0.62rem;color:#d6e8f8;font-weight:600;"
+                f"margin:0.15rem 0 0.08rem;'>{div_name}</div>",
                 unsafe_allow_html=True,
             )
             tcols = st.columns(5)
             for ti, tm in enumerate(teams):
-                tc_p, tc_a, _ = _TEAM_COLORS.get(tm, ("#3b82f6", "#93c5fd", "#081420"))
                 is_active = tm == sel_team
                 with tcols[ti]:
                     if st.button(tm, key=f"tpick_{tm}", use_container_width=True):
                         st.session_state["team_analysis_sel"] = tm
                         st.rerun()
-                    # Colored card overlay
-                    _bg = "#18243a" if is_active else tc_p
-                    _bdr = "#3b82f6" if is_active else f"{tc_a}66"
-                    _nc = "#93b8d8" if is_active else tc_a
+                    # Logo overlay
                     st.markdown(
-                        f"<div style='margin-top:-3.1rem;pointer-events:none;background:{_bg};"
-                        f"border:1px solid {_bdr};border-radius:8px;padding:8px 4px 6px;"
-                        f"text-align:center;min-height:54px;display:flex;flex-direction:column;"
-                        f"align-items:center;justify-content:center;'>"
-                        f"<div style='font-size:1.2rem;font-weight:800;color:#e8f4ff;'>{tm}</div>"
-                        f"<div style='font-size:0.6rem;color:{_nc};margin-top:2px;'>"
-                        f"{_ABBR_TO_FULL.get(tm, tm)}</div></div>",
+                        f"<div style='margin-top:-2.8rem;pointer-events:none;'>"
+                        f"{_logo_card(tm, is_active)}</div>",
                         unsafe_allow_html=True,
                     )
 
@@ -8670,8 +8792,18 @@ def _render_team_analysis_page():
     with nl_col:
         _render_league_grid("National League", _NL_DIVS)
 
-    # Spacer between team picker and header card
-    st.markdown("<div style='margin-top:1.2rem;'></div>", unsafe_allow_html=True)
+    # Spacer between team picker and content
+    st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
+
+    # If no team selected yet, show prompt and stop
+    if not sel_team:
+        st.markdown(
+            "<div style='text-align:center;padding:3rem 0;color:#7a9ebc;font-size:1rem;'>"
+            "Select a team above to view their analysis.</div>",
+            unsafe_allow_html=True,
+        )
+        _render_feedback_widget("team")
+        return
 
     _full_name = f"{_TEAM_CITIES.get(sel_team, '')} {_ABBR_TO_FULL.get(sel_team, sel_team)}"
 
@@ -8731,20 +8863,7 @@ def _render_team_analysis_page():
     _tc_primary, _tc_accent, _tc_dark = _TEAM_COLORS.get(sel_team, ("#3b82f6", "#93c5fd", "#081420"))
 
     # Team logo URL from R2
-    _LOGO_NAMES = {
-        "ARI": "Arizona Diamondbacks", "ATH": "Oakland Athletics", "ATL": "Atlanta Braves",
-        "BAL": "Baltimore Orioles", "BOS": "Boston Red Sox", "CHC": "Chicago Cubs",
-        "CHW": "Chicago White Sox", "CIN": "Cincinnati Reds", "CLE": "Cleveland Guardians",
-        "COL": "Colorado Rockies", "DET": "Detroit Tigers", "HOU": "Houston Astros",
-        "KCR": "Kansas City Royals", "LAA": "Los Angeles Angels", "LAD": "Los Angeles Dodgers",
-        "MIA": "Miami Marlins", "MIL": "Milwaukee Brewers", "MIN": "Minnesota Twins",
-        "NYM": "New York Mets", "NYY": "New York Yankees", "PHI": "Philadelphia Phillies",
-        "PIT": "Pittsburgh Pirates", "SDP": "San Diego Padres", "SEA": "Seattle Mariners",
-        "SFG": "San Francisco Giants", "STL": "St. Louis Cardinals", "TBR": "Tampa Bay Rays",
-        "TEX": "Texas Rangers", "TOR": "Toronto Blue Jays", "WSN": "Washington Nationals",
-    }
-    _logo_file = _LOGO_NAMES.get(sel_team, _full_name)
-    _logo_url = _data_url(f"logos/{_logo_file}.png")
+    _logo_url = _team_logo_url(sel_team)
 
     # Live 2026 record from MLB API (cached 24h)
     _standings = _fetch_2026_standings()
