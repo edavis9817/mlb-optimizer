@@ -5841,7 +5841,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
       <div style="font-size:18px;font-weight:700;color:#e8f4ff;">{_n_shown:,}</div>
     </div>
     <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
-      <div style="font-size:10px;color:#7a9ebc;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Median $/fWAR</div>
+      <div style="font-size:10px;color:#7a9ebc;letter-spacing:1px;margin-bottom:2px;">MEDIAN $/fWAR</div>
       <div style="font-size:18px;font-weight:700;color:#e8f4ff;">${_med_dpw:.1f}M</div>
     </div>
     <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
@@ -8551,6 +8551,53 @@ def _fetch_2026_standings() -> dict[str, tuple[int, int]]:
         return {}
 
 
+@st.cache_data(ttl=86400, show_spinner=False)
+def _fetch_2026_team_stats(team_id: int) -> pd.DataFrame:
+    """Fetch 2026 roster stats from MLB Stats API. Cached 24 hours.
+
+    Returns DataFrame with player_id, name, and key batting/pitching stats.
+    """
+    if not _requests_available:
+        return pd.DataFrame()
+    try:
+        url = (f"https://statsapi.mlb.com/api/v1/teams/{team_id}/roster"
+               f"?rosterType=active&season=2026&hydrate=person(stats(type=season,season=2026))")
+        resp = _requests.get(url, timeout=15)
+        if resp.status_code != 200:
+            return pd.DataFrame()
+        data = resp.json()
+        rows = []
+        for entry in data.get("roster", []):
+            person = entry.get("person", {})
+            pid = person.get("id")
+            name = person.get("fullName", "")
+            pos = entry.get("position", {}).get("abbreviation", "")
+            # Extract stats
+            stats_groups = person.get("stats", [])
+            batting = {}
+            pitching = {}
+            for sg in stats_groups:
+                if sg.get("type", {}).get("displayName") == "season":
+                    for split in sg.get("splits", []):
+                        stat = split.get("stat", {})
+                        if "era" in stat:
+                            pitching = stat
+                        elif "avg" in stat:
+                            batting = stat
+            rows.append({
+                "player_id": pid, "name": name, "pos_2026": pos,
+                "g_2026": batting.get("gamesPlayed") or pitching.get("gamesPlayed"),
+                "avg_2026": batting.get("avg"), "hr_2026": batting.get("homeRuns"),
+                "rbi_2026": batting.get("rbi"), "obp_2026": batting.get("obp"),
+                "era_2026": pitching.get("era"), "ip_2026": pitching.get("inningsPitched"),
+                "whip_2026": pitching.get("whip"), "so_2026": pitching.get("strikeOuts"),
+                "w_2026": pitching.get("wins"), "l_2026": pitching.get("losses"),
+            })
+        return pd.DataFrame(rows)
+    except Exception:
+        return pd.DataFrame()
+
+
 def _render_team_analysis_page():
     """Full team deep-dive page — roster, rankings, salary, projections."""
 
@@ -8723,35 +8770,35 @@ def _render_team_analysis_page():
         f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;'>"
         # Row 1: Records + Payroll + fWAR
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>2025 Record</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2025 RECORD</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_wins}–{162 - _wins}</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>2026 Record</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2026 RECORD</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_record_26}</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>2026 Payroll</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2026 PAYROLL</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>${_payroll_m:.0f}M</div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>#{_pay_rank}/30</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>Lux Tax Est.</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>LUX TAX EST.</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>~${_lux_tax_est}M</div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>CBT: $244M</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>Team fWAR</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>TEAM fWAR</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_war:.1f}</div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>#{_war_rank}/30 · avg {_lg_avg_war:.0f}</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>{'Surplus Value' if _gap < 0 else 'Lost Value'}</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>{'SURPLUS VALUE' if _gap < 0 else 'LOST VALUE'}</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:{'#22c55e' if _gap < 0 else '#f59e0b'};'>"
         f"${int(_gap):+d}M</div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>#{_eff_rank}/30</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>Spend Efficiency</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>SPEND EFFICIENCY</div>"
         f"<div style='font-size:1.1rem;font-weight:700;color:#e8f4ff;'>"
         f"#{_eff_rank} <span style='font-size:0.72rem;color:#7a9ebc;'>MLB</span></div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>#{_lg_rank}/{_lg_total} {_team_lg}</div></div>"
         f"<div style='{_kpi}'>"
-        f"<div style='font-size:11px;color:{_tc_accent};text-transform:uppercase;'>$/fWAR</div>"
+        f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>$/fWAR</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>${_dpw:.1f}M</div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>avg ${_lg_avg_dpw:.1f}M</div></div>"
         f"</div></div>",
@@ -8787,6 +8834,17 @@ def _render_team_analysis_page():
             except Exception:
                 _td["WAR_Total"] = None
 
+            # Merge 2026 live stats from MLB API
+            _team_id_val = int(team_data["team_id"].iloc[0]) if "team_id" in team_data.columns and not team_data["team_id"].isna().all() else None
+            if _team_id_val:
+                _live_stats = _fetch_2026_team_stats(_team_id_val)
+                if not _live_stats.empty:
+                    _live_stats["_pid"] = _live_stats["player_id"].astype(str)
+                    _td["_pid"] = _td["player_id"].astype(str)
+                    _live_cols = [c for c in _live_stats.columns if c.endswith("_2026") or c == "_pid"]
+                    _td = _td.merge(_live_stats[_live_cols], on="_pid", how="left")
+                    _td = _td.drop(columns=["_pid"], errors="ignore")
+
             # ── Build position player table ──────────────────────────────
             def _build_hitter_tbl(src_df):
                 tbl = pd.DataFrame()
@@ -8798,10 +8856,14 @@ def _render_team_analysis_page():
                 _stg = _stg.replace({"FA": "Free Agent"})
                 tbl["Stage"] = _stg.values
                 tbl["'26 Salary"] = src_df["salary_2026_M"].values
-                tbl["'25 fWAR"] = src_df.get("WAR_Total", pd.Series(dtype=float)).values
                 tbl["AVG"] = src_df.get("AVG", pd.Series(dtype=float)).values
                 tbl["OBP"] = src_df.get("OBP", pd.Series(dtype=float)).values
                 tbl["HR"] = src_df.get("HR", pd.Series(dtype=float)).values
+                # 2026 live stats
+                if "avg_2026" in src_df.columns:
+                    tbl["'26 AVG"] = src_df.get("avg_2026", pd.Series(dtype=str)).values
+                    tbl["'26 HR"] = src_df.get("hr_2026", pd.Series(dtype=float)).values
+                tbl["'25 fWAR"] = src_df.get("WAR_Total", pd.Series(dtype=float)).values
                 tbl["Contract"] = src_df.get("pay_contract", pd.Series(dtype=str)).values
                 tbl = tbl.sort_values("'26 Salary", ascending=False).reset_index(drop=True)
                 tbl.insert(0, "#", range(1, len(tbl) + 1))
@@ -8817,10 +8879,16 @@ def _render_team_analysis_page():
                 _stg = _stg.replace({"FA": "Free Agent"})
                 tbl["Stage"] = _stg.values
                 tbl["'26 Salary"] = src_df["salary_2026_M"].values
-                tbl["'25 fWAR"] = src_df.get("WAR_Total", pd.Series(dtype=float)).values
                 tbl["ERA"] = src_df.get("ERA", pd.Series(dtype=float)).values
                 tbl["WHIP"] = src_df.get("WHIP", pd.Series(dtype=float)).values
                 tbl["IP"] = src_df.get("IP", pd.Series(dtype=float)).values
+                # 2026 live stats
+                if "era_2026" in src_df.columns:
+                    tbl["'26 ERA"] = src_df.get("era_2026", pd.Series(dtype=str)).values
+                    tbl["'26 W-L"] = (src_df.get("w_2026", pd.Series(dtype=str)).fillna("").astype(str) + "-"
+                                      + src_df.get("l_2026", pd.Series(dtype=str)).fillna("").astype(str)).values
+                    tbl["'26 IP"] = src_df.get("ip_2026", pd.Series(dtype=str)).values
+                tbl["'25 fWAR"] = src_df.get("WAR_Total", pd.Series(dtype=float)).values
                 tbl["Contract"] = src_df.get("pay_contract", pd.Series(dtype=str)).values
                 tbl = tbl.sort_values("'26 Salary", ascending=False).reset_index(drop=True)
                 tbl.insert(0, "#", range(1, len(tbl) + 1))
