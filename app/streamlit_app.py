@@ -8845,17 +8845,25 @@ def _render_team_analysis_page():
     # CSS to make team picker buttons transparent with logo overlay
     st.markdown("""<style>
     /* Team picker: hide the spacer buttons below logos */
-    .team-picker-zone [data-testid="stButton"] > button {
-        background: transparent !important;
-        border: transparent !important;
-        box-shadow: none !important;
-        color: transparent !important;
+    .team-picker-zone [data-testid="stButton"] {
+        height: 0 !important;
+        overflow: hidden !important;
+        margin: 0 !important;
         padding: 0 !important;
         min-height: 0 !important;
-        height: 1px !important;
-        font-size: 0 !important;
-        margin: 0 !important;
-        overflow: hidden !important;
+        max-height: 0 !important;
+        opacity: 0 !important;
+        pointer-events: auto !important;
+        position: relative !important;
+    }
+    .team-picker-zone [data-testid="stButton"] > button {
+        position: absolute !important;
+        top: -70px !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 80px !important;
+        opacity: 0 !important;
+        cursor: pointer !important;
     }
     </style>""", unsafe_allow_html=True)
 
@@ -8871,7 +8879,7 @@ def _render_team_analysis_page():
             f'<img src="{_url}" width="55" height="55" style="object-fit:contain;" '
             f'onerror="this.outerHTML=\'<div style=&quot;font-size:1rem;font-weight:700;'
             f'color:#e8f4ff;line-height:55px;&quot;>{tm}</div>\'">'
-            f'<div style="font-size:0.62rem;font-weight:700;color:#e8f4ff;margin-top:2px;">{_name}</div>'
+            f'<div style="font-size:0.72rem;font-weight:700;color:#e8f4ff;margin-top:3px;">{_name}</div>'
             f'</div>'
         )
 
