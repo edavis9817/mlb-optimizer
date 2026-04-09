@@ -7861,11 +7861,11 @@ def _render_rankings_page():
         ), unsafe_allow_html=True)
     with qa3:
         st.markdown(_qa(
-            "💰", "LOWEST $ PER fWAR",
+            "💰", "BEST &#36;/fWAR",
             _full(_best_dpw),
-            f"${_best_dpw['DPW']:.1f}M per fWAR",
+            f"&#36;{_best_dpw['DPW']:.1f}M per fWAR",
             "#1a1228",
-            "Lowest cost per fWAR — the most production per dollar on the roster",
+            "",
             team_abbr=_best_dpw["Team"],
         ), unsafe_allow_html=True)
     with qa4:
@@ -8847,17 +8847,22 @@ def _render_team_analysis_page():
         background: transparent !important;
         border: none !important;
         box-shadow: none !important;
-        padding: 2px !important;
+        outline: none !important;
+        padding: 0 !important;
         min-height: 65px !important;
+        color: transparent !important;
+    }
+    .team-picker-zone [data-testid="stButton"] > button * {
+        color: transparent !important;
+        font-size: 0 !important;
     }
     .team-picker-zone [data-testid="stButton"] > button:hover {
-        background: rgba(59,130,246,0.08) !important;
-        border-radius: 8px !important;
+        background: transparent !important;
+        border: none !important;
     }
-    .team-picker-zone [data-testid="stButton"] > button > div > p {
-        font-size: 0 !important;
-        line-height: 0 !important;
-        height: 0 !important;
+    .team-picker-zone [data-testid="stButton"] > button:focus {
+        border: none !important;
+        box-shadow: none !important;
     }
     </style>""", unsafe_allow_html=True)
 
@@ -9050,8 +9055,8 @@ def _render_team_analysis_page():
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2026 RECORD</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_record_26}</div>"
         f"<div style='font-size:0.68rem;color:#7a9ebc;'>"
-        f"{_ordinal(int(_div_rank))} {_team_div}" if _div_rank != "?" else ""
-        f"</div></div>"
+        + (f"{_ordinal(int(_div_rank))} {_team_div}" if _div_rank != "?" else "")
+        + f"</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2026 PAYROLL</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>${_payroll_m:.0f}M</div>"
