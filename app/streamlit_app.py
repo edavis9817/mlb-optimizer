@@ -2735,6 +2735,8 @@ def _render_home_page():
          "and age trajectory analysis across 4,000+ player-seasons."),
         ("simulator", "🎮", "Roster Simulator",
          "Build customized MLB rosters to optimize pay vs performance efficiency."),
+        ("glossary",  "📖", "Methodology",
+         "How we calculate every metric, where the data comes from, and what it all means."),
     ]
 
     # ------------------------------------------------------------------
@@ -2837,7 +2839,7 @@ def _render_home_page():
     /* card grid inside wrapper */
     .h-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(5, 1fr);
         gap: 1rem;
         width: 100%;
         max-width: 1300px;
