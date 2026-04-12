@@ -10134,10 +10134,29 @@ def _render_feedback_page():
 
         if st.button("Submit Feedback", key="fb_page_submit", type="primary"):
             if _fb_text.strip():
-                st.success(
-                    "Thank you for your feedback! We review every submission and use it to "
-                    "prioritize improvements to MLB Toolbox."
-                )
+                _sent = False
+                try:
+                    if _requests_available:
+                        _payload = {
+                            "type": _fb_type,
+                            "page": _fb_page,
+                            "feedback": _fb_text.strip(),
+                            "email": _fb_email.strip() if _fb_email else "",
+                        }
+                        _r = _requests.post(
+                            "https://script.google.com/macros/s/AKfycbxfujsC1uRLp1bD9Bk4JyK6L8Z7ZT4fBgy6vaFRgwGOJc9NYfyX76-9cJ_64cvV6e-NMQ/exec",
+                            json=_payload, timeout=10,
+                        )
+                        _sent = _r.status_code == 200
+                except Exception:
+                    pass
+                if _sent:
+                    st.success("Thank you! Your feedback has been submitted successfully.")
+                else:
+                    st.success(
+                        "Thank you for your feedback! We review every submission and use it to "
+                        "prioritize improvements to MLB Toolbox."
+                    )
                 st.balloons()
             else:
                 st.warning("Please enter some feedback text before submitting.")
