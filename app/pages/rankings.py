@@ -16,10 +16,17 @@ from utils.player_utils import (
     headshot_url as _headshot_url,
 )
 from utils.theme import plotly_theme as _pt
+from utils.data_loading import (
+    data_url,
+    read_csv,
+    team_logo_url,
+    cached_mlbam_lookup,
+    R2_MODE as r2_mode,
+    RAZZBALL_PATH as razzball_path,
+)
 
 
-def render(data_url, read_csv, team_logo_url, cached_mlbam_lookup, razzball_path,
-           r2_mode: bool = False):
+def render(*_args, **_kwargs):
     """Rankings page entry point."""
 
     # ── Query-param driven box selection ──────────────────────────────────────

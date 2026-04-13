@@ -6,14 +6,15 @@ from utils.player_utils import (
     fix_player_name as _fix_player_name,
     headshot_url as _headshot_url,
 )
-
-
-def render(
+from utils.data_loading import (
     data_url,
     read_csv,
     cached_mlbam_lookup,
-    razzball_path: str,
-):
+    RAZZBALL_PATH as razzball_path,
+)
+
+
+def render(*_args, **_kwargs):
     """Landing page: Stadium Tunnel + Starting Lineup concept."""
 
     # Player headshots for tunnel walls (top fWAR leaders)

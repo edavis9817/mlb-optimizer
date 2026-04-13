@@ -13,6 +13,33 @@ from utils.theme import plotly_theme as _pt
 from utils.components import render_feedback_widget as _render_feedback_widget
 from utils.components import render_glossary as _render_glossary
 from utils.team_utils import cbt_info as _cbt_info
+from utils.data_loading import (
+    R2_BASE_URL as _DL_R2_BASE_URL,
+    R2_MODE as _DL_R2_MODE,
+    ROOT_DIR as _DL_ROOT_DIR,
+    DEFAULT_CONFIG as _DL_DEFAULT_CONFIG,
+    HEADSHOTS_DIR as _DL_HEADSHOTS_DIR,
+    RAZZBALL_PATH as _DL_RAZZBALL_PATH,
+    data_url as _DL_data_url,
+    read_csv as _DL_read_csv,
+    load_base_config as _DL_load_base_config,
+    resolve_data_path as _DL_resolve_data_path,
+    file_hash as _DL_file_hash,
+    dir_hash as _DL_dir_hash,
+    cached_simulator_data as _DL_cached_simulator_data,
+    cached_2026_payroll as _DL_cached_2026_payroll,
+    cached_40man_roster as _DL_cached_40man_roster,
+    cached_war_reliability as _DL_cached_war_reliability,
+    cached_player_history as _DL_cached_player_history,
+    cached_razzball as _DL_cached_razzball,
+    cached_mlbam_lookup as _DL_cached_mlbam_lookup,
+)
+from utils.constants import (
+    ROSTER_TEMPLATE as _DL_ROSTER_TEMPLATE,
+    ELIGIBLE_SLOTS_MAP as _DL_ELIGIBLE_SLOTS_MAP,
+    OPTIONAL_SLOTS as _DL_OPTIONAL_SLOTS,
+    PG_CHART_COLORS as _DL_PG_CHART_COLORS,
+)
 
 
 # ── Helpers (simulator-only) ────────────────────────────────────────────────
@@ -178,11 +205,11 @@ def _render_trade_analyzer(roster_df: pd.DataFrame):
     )
 
 
-def _render_position_coverage(roster_df: pd.DataFrame, deps: dict):
+def _render_position_coverage(roster_df: pd.DataFrame, deps=None):
     """Show position coverage vs standard roster template."""
-    _ROSTER_TEMPLATE = deps["ROSTER_TEMPLATE"]
-    _ELIGIBLE_SLOTS_MAP = deps["ELIGIBLE_SLOTS_MAP"]
-    _OPTIONAL_SLOTS = deps["OPTIONAL_SLOTS"]
+    _ROSTER_TEMPLATE = _DL_ROSTER_TEMPLATE
+    _ELIGIBLE_SLOTS_MAP = _DL_ELIGIBLE_SLOTS_MAP
+    _OPTIONAL_SLOTS = _DL_OPTIONAL_SLOTS
 
     if "pos_group" not in roster_df.columns:
         st.info("No position data available.")
@@ -231,14 +258,14 @@ def _render_position_coverage(roster_df: pd.DataFrame, deps: dict):
                  height=min(60 + len(cov_df) * 35, 490))
 
 
-def _render_roster_summary(budget_M: float, deps: dict):
+def _render_roster_summary(budget_M: float, deps=None):
     """Render the built roster summary panel."""
     import io
 
-    _ROSTER_TEMPLATE = deps["ROSTER_TEMPLATE"]
-    _ELIGIBLE_SLOTS_MAP = deps["ELIGIBLE_SLOTS_MAP"]
-    _OPTIONAL_SLOTS = deps["OPTIONAL_SLOTS"]
-    _PG_CHART_COLORS = deps["PG_CHART_COLORS"]
+    _ROSTER_TEMPLATE = _DL_ROSTER_TEMPLATE
+    _ELIGIBLE_SLOTS_MAP = _DL_ELIGIBLE_SLOTS_MAP
+    _OPTIONAL_SLOTS = _DL_OPTIONAL_SLOTS
+    _PG_CHART_COLORS = _DL_PG_CHART_COLORS
 
     roster_records = st.session_state.get("sim_roster", [])
     if not roster_records:
@@ -525,21 +552,21 @@ The Optimizer tab runs a more sophisticated model: `wins = intercept + slope \u0
             st.rerun()
 
 
-def _render_player_card(player_name: str, combined_path: str, file_hash: str, deps: dict):
+def _render_player_card(player_name: str, combined_path: str, file_hash: str, deps=None):
     """Render a player detail card: headshot + year-by-year stats (2021-2025)."""
     import io as _io
 
-    _data_url = deps["data_url"]
-    _R2_MODE = deps["r2_mode"]
-    _R2_BASE_URL = deps["r2_base_url"]
-    _ROOT_DIR = deps["ROOT_DIR"]
-    _HEADSHOTS_DIR = deps["HEADSHOTS_DIR"]
-    _RAZZBALL_PATH = deps["RAZZBALL_PATH"]
-    _cached_player_history = deps["cached_player_history"]
-    _cached_simulator_data = deps["cached_simulator_data"]
-    _cached_2026_payroll = deps["cached_2026_payroll"]
-    _cached_razzball = deps["cached_razzball"]
-    _dir_hash = deps["dir_hash"]
+    _data_url = _DL_data_url
+    _R2_MODE = _DL_R2_MODE
+    _R2_BASE_URL = _DL_R2_BASE_URL
+    _ROOT_DIR = _DL_ROOT_DIR
+    _HEADSHOTS_DIR = _DL_HEADSHOTS_DIR
+    _RAZZBALL_PATH = _DL_RAZZBALL_PATH
+    _cached_player_history = _DL_cached_player_history
+    _cached_simulator_data = _DL_cached_simulator_data
+    _cached_2026_payroll = _DL_cached_2026_payroll
+    _cached_razzball = _DL_cached_razzball
+    _dir_hash = _DL_dir_hash
 
     try:
         import requests as _requests
@@ -798,11 +825,11 @@ def _render_player_card(player_name: str, combined_path: str, file_hash: str, de
             pass
 
 
-def _render_best_fits(roster_df: pd.DataFrame, budget_M: float, deps: dict) -> None:
+def _render_best_fits(roster_df: pd.DataFrame, budget_M: float, deps=None) -> None:
     """Recommend available players that best complement the current roster and budget."""
-    _ROSTER_TEMPLATE = deps["ROSTER_TEMPLATE"]
-    _ELIGIBLE_SLOTS_MAP = deps["ELIGIBLE_SLOTS_MAP"]
-    _OPTIONAL_SLOTS = deps["OPTIONAL_SLOTS"]
+    _ROSTER_TEMPLATE = _DL_ROSTER_TEMPLATE
+    _ELIGIBLE_SLOTS_MAP = _DL_ELIGIBLE_SLOTS_MAP
+    _OPTIONAL_SLOTS = _DL_OPTIONAL_SLOTS
 
     all_players = st.session_state.get("sim_df_full", pd.DataFrame())
     if all_players.empty:
@@ -1024,32 +1051,33 @@ def _render_best_fits(roster_df: pd.DataFrame, budget_M: float, deps: dict) -> N
 
 # ── Main render function ────────────────────────────────────────────────────
 
-def render(deps: dict):
+def render(deps: dict | None = None):
     """Render the Roster Simulator page -- full 2-column layout with sticky bar.
 
-    ``deps`` is a dict with all needed functions/values from the main module.
+    All data functions are now imported directly from utils.data_loading.
+    ``deps`` is accepted for backward compatibility but ignored.
     """
     import io
 
-    # Unpack dependencies
-    _data_url = deps["data_url"]
-    _read_csv = deps["read_csv"]
-    _R2_MODE = deps["r2_mode"]
-    _DEFAULT_CONFIG = deps["DEFAULT_CONFIG"]
-    _ROOT_DIR = deps["ROOT_DIR"]
-    _load_base_config = deps["load_base_config"]
-    _resolve_data_path = deps["resolve_data_path"]
-    _file_hash = deps["file_hash"]
-    _dir_hash = deps["dir_hash"]
-    _cached_simulator_data = deps["cached_simulator_data"]
-    _cached_2026_payroll = deps["cached_2026_payroll"]
-    _cached_40man_roster = deps["cached_40man_roster"]
-    _cached_war_reliability = deps["cached_war_reliability"]
-    _cached_player_history = deps["cached_player_history"]
-    _ROSTER_TEMPLATE = deps["ROSTER_TEMPLATE"]
-    _ELIGIBLE_SLOTS_MAP = deps["ELIGIBLE_SLOTS_MAP"]
-    _OPTIONAL_SLOTS = deps["OPTIONAL_SLOTS"]
-    _PG_CHART_COLORS = deps["PG_CHART_COLORS"]
+    # All dependencies now come from module-level imports
+    _data_url = _DL_data_url
+    _read_csv = _DL_read_csv
+    _R2_MODE = _DL_R2_MODE
+    _DEFAULT_CONFIG = _DL_DEFAULT_CONFIG
+    _ROOT_DIR = _DL_ROOT_DIR
+    _load_base_config = _DL_load_base_config
+    _resolve_data_path = _DL_resolve_data_path
+    _file_hash = _DL_file_hash
+    _dir_hash = _DL_dir_hash
+    _cached_simulator_data = _DL_cached_simulator_data
+    _cached_2026_payroll = _DL_cached_2026_payroll
+    _cached_40man_roster = _DL_cached_40man_roster
+    _cached_war_reliability = _DL_cached_war_reliability
+    _cached_player_history = _DL_cached_player_history
+    _ROSTER_TEMPLATE = _DL_ROSTER_TEMPLATE
+    _ELIGIBLE_SLOTS_MAP = _DL_ELIGIBLE_SLOTS_MAP
+    _OPTIONAL_SLOTS = _DL_OPTIONAL_SLOTS
+    _PG_CHART_COLORS = _DL_PG_CHART_COLORS
 
     # ---- CSS -----------------------------------------------------------------
     st.markdown("""<style>

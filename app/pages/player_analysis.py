@@ -17,6 +17,19 @@ from utils.components import (
     render_glossary as _render_glossary,
 )
 from utils.theme import plotly_theme as _pt
+from utils.data_loading import (
+    R2_BASE_URL,
+    data_url,
+    read_csv,
+    R2_MODE as r2_mode,
+    cached_mlbam_lookup,
+    RAZZBALL_PATH as razzball_path,
+    file_hash as file_hash_fn,
+    load_base_config,
+    resolve_data_path,
+    DEFAULT_CONFIG as default_config,
+    HEADSHOTS_DIR as _HEADSHOTS_DIR,
+)
 
 try:
     import requests as _requests
@@ -29,29 +42,20 @@ except ImportError:
 # Public entry point
 # ---------------------------------------------------------------------------
 
-def render(data_url, read_csv, r2_mode, cached_simulator_data,
-           cached_mlbam_lookup, razzball_path, file_hash_fn,
-           load_base_config, resolve_data_path, default_config,
-           cached_2026_payroll, dir_hash_fn):
+def render(*_args, **_kwargs):
     """Player analysis page entry point.
 
-    Parameters come from streamlit_app via dependency injection so this module
-    stays free of hard references to the main app module.
+    All data functions are now imported directly from utils.data_loading.
+    Legacy parameters are accepted but ignored.
     """
-    _render_league_analysis(data_url, read_csv, r2_mode,
-                            cached_mlbam_lookup, razzball_path,
-                            file_hash_fn, load_base_config,
-                            resolve_data_path, default_config)
+    _render_league_analysis()
 
 
 # ---------------------------------------------------------------------------
 # Internal: league analysis wrapper
 # ---------------------------------------------------------------------------
 
-def _render_league_analysis(data_url, read_csv, r2_mode,
-                            cached_mlbam_lookup, razzball_path,
-                            file_hash_fn, load_base_config,
-                            resolve_data_path, default_config):
+def _render_league_analysis():
     """Render the League Efficiency Analysis page."""
     import subprocess
 
@@ -62,10 +66,7 @@ def _render_league_analysis(data_url, read_csv, r2_mode,
         "Fit the PPEL regression line, colour by career stage or Pay-Performance Ratio, "
         "and identify the most underpaid / overpaid players in the league."
     )
-    _render_efficiency_frontier(data_url, read_csv, r2_mode,
-                                cached_mlbam_lookup, razzball_path,
-                                file_hash_fn, load_base_config,
-                                resolve_data_path, default_config)
+    _render_efficiency_frontier()
 
     _render_feedback_widget("league")
 
@@ -74,19 +75,9 @@ def _render_league_analysis(data_url, read_csv, r2_mode,
 # Internal: efficiency frontier
 # ---------------------------------------------------------------------------
 
-def _render_efficiency_frontier(data_url, read_csv, r2_mode,
-                                cached_mlbam_lookup, razzball_path,
-                                file_hash_fn, load_base_config,
-                                resolve_data_path, default_config):
+def _render_efficiency_frontier():
     """WAR vs Salary efficiency frontier -- interactive Streamlit port of app-2-2.R."""
     from statsmodels.nonparametric.smoothers_lowess import lowess as _sm_lowess
-
-    R2_BASE_URL = os.environ.get("R2_BASE_URL", "").strip().rstrip("/")
-    _ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    _HEADSHOTS_DIR = (
-        f"{R2_BASE_URL}/data/headshots" if r2_mode
-        else os.path.join(_ROOT_DIR, "data", "headshots")
-    )
 
     # -- data path -------------------------------------------------------------
     if r2_mode:
@@ -527,7 +518,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                                     with open(_hs_local, "rb") as _hf:
                                         _hs_bytes = _hf.read()
                             if _hs_bytes is None and _requests_available:
-                                _rzb = _cached_razzball(razzball_path, read_csv)
+                                _rzb = _cached_razzball(razzball_path)
                                 _mlbam_id = None
                                 if not _rzb.empty and "Name" in _rzb.columns and "MLBAMID" in _rzb.columns:
                                     _rzb_r = _rzb[
@@ -1469,12 +1460,12 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
 # ---------------------------------------------------------------------------
 
 @st.cache_data(show_spinner=False)
-def _cached_razzball(razzball_path: str, read_csv) -> pd.DataFrame:
+def _cached_razzball(razzball_path_arg: str) -> pd.DataFrame:
     """Load razzball MLBAM ID lookup table (local file or R2 URL)."""
-    if not razzball_path.startswith("http") and not os.path.exists(razzball_path):
+    if not razzball_path_arg.startswith("http") and not os.path.exists(razzball_path_arg):
         return pd.DataFrame()
     try:
-        df = read_csv(razzball_path, low_memory=False)
+        df = read_csv(razzball_path_arg, low_memory=False)
         df.columns = [c.strip() for c in df.columns]
         return df
     except Exception:

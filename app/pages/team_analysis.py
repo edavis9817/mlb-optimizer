@@ -18,14 +18,23 @@ from utils.constants import (
     TEAM_CITIES as _TEAM_CITIES,
     TEAM_COLORS as _TEAM_COLORS,
 )
+from utils.data_loading import (
+    data_url,
+    read_csv,
+    load_enriched_roster,
+    team_logo_url,
+    fetch_2026_standings as fetch_standings,
+    fetch_2026_standings_full as fetch_standings_full,
+    fetch_2026_team_stats as fetch_team_stats,
+    R2_MODE as r2_mode,
+)
 
 
-def render(data_url, read_csv, load_enriched_roster, team_logo_url,
-           fetch_standings, fetch_standings_full, fetch_team_stats, r2_mode):
+def render(*_args, **_kwargs):
     """Team analysis page entry point.
 
-    Parameters come from streamlit_app via dependency injection so this module
-    stays free of hard references to the main app module.
+    All data functions are now imported directly from utils.data_loading.
+    Legacy parameters are accepted but ignored.
     """
 
     # ── Team picker CSS ──────────────────────────────────────────────────
