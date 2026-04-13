@@ -233,7 +233,7 @@ def render(data_url, read_csv, load_enriched_roster, team_logo_url,
         f"border-left:4px solid {_tc_primary};border-radius:10px;padding:18px 22px;margin-bottom:14px;"
         f"animation:slideUp 0.4s ease-out;'>"
         f"<div style='display:flex;align-items:center;gap:14px;margin-bottom:12px;'>"
-        f"<img src='{_logo_url}' width='52' height='52' style='object-fit:contain;' onerror=\"this.style.display='none'\">"
+        f"<img src='{_logo_url}' width='52' height='52' loading='lazy' style='object-fit:contain;' onerror=\"this.style.display='none'\">"
         f"<div style='font-size:1.5rem;font-weight:800;color:#e8f4ff;'>{_full_name}</div>"
         f"</div>"
         f"<div style='display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;'>"

@@ -397,13 +397,13 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
 
             if _shade_ovuv and _show_reg and len(_xseq) > 1:
                 _std = float(df["residual"].std())
-                fig1.add_trace(go.Scatter(
+                fig1.add_trace(go.Scattergl(
                     x=np.concatenate([_xseq, _xseq[::-1]]),
                     y=np.concatenate([_yseq + _std, _yseq[::-1]]),
                     fill="toself", fillcolor="rgba(239,68,68,0.07)",
                     line=dict(color="rgba(0,0,0,0)"), name="Overpaid zone", hoverinfo="skip",
                 ))
-                fig1.add_trace(go.Scatter(
+                fig1.add_trace(go.Scattergl(
                     x=np.concatenate([_xseq, _xseq[::-1]]),
                     y=np.concatenate([_yseq, (_yseq - _std)[::-1]]),
                     fill="toself", fillcolor="rgba(34,197,94,0.07)",
@@ -414,7 +414,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                 for _stg, _grp in df.groupby("Stage_Clean"):
                     _c   = _STAGE_COLORS.get(_stg, "#94a3b8")
                     _idx = _grp.index
-                    fig1.add_trace(go.Scatter(
+                    fig1.add_trace(go.Scattergl(
                         x=_grp["WAR_Total"], y=_grp["Salary_M"],
                         mode="markers", name=_stg,
                         marker=dict(
@@ -430,7 +430,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                     [0.0, "#22c55e"], [0.33, "#86efac"], [0.5, "#ffffff"],
                     [0.67, "#fca5a5"], [1.0, "#ef4444"],
                 ]
-                fig1.add_trace(go.Scatter(
+                fig1.add_trace(go.Scattergl(
                     x=df["WAR_Total"], y=df["Salary_M"],
                     mode="markers", name="Players", showlegend=False,
                     marker=dict(
@@ -445,7 +445,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                 ))
 
             if _show_reg:
-                fig1.add_trace(go.Scatter(
+                fig1.add_trace(go.Scattergl(
                     x=_xseq, y=_yseq, mode="lines",
                     line=dict(color="#f4a261", width=2),
                     name=_reg_lbl,

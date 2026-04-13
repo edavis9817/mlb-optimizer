@@ -313,7 +313,7 @@ def render(data_url, read_csv, team_logo_url, cached_mlbam_lookup, razzball_path
         _sel_cls = "rk-box-sel" if box_id == _sel_box else ""
         _href = f"?page=rankings&rk_box={box_id}&rk_year={sel_year}"
         mid = _mlbam.get(_fix_player_name(pname), "") if _mlbam else ""
-        _img = (f"<img src='{_headshot_url(mid, 120)}' width='60' height='60' "
+        _img = (f"<img src='{_headshot_url(mid, 120)}' width='60' height='60' loading='lazy' "
                 f"style='border-radius:50%;object-fit:cover;margin-bottom:4px;' "
                 f"onerror=\"this.style.display='none'\">") if mid else ""
         _sub_html = f"<div style='font-size:0.62rem;color:#4a687e;'>{psub}</div>" if psub else ""

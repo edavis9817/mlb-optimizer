@@ -554,7 +554,7 @@ def _arch_label(arch_id: str) -> str:
 # Cache functions
 # ---------------------------------------------------------------------------
 
-@st.cache_data(show_spinner="Loading & projecting player data ...", persist="disk")
+@st.cache_data(show_spinner="Loading & projecting player data ...", persist="disk", ttl=86400)
 def _cached_projections(salary_path: str, file_hash: str, proj_weights_json: str,
                          season: int, clip_neg: bool, min_war: float, max_yrs: int):
     cfg = {
@@ -568,7 +568,7 @@ def _cached_projections(salary_path: str, file_hash: str, proj_weights_json: str
     return make_projections(raw_df, cfg), raw_df
 
 
-@st.cache_data(show_spinner="Building archetypes ...", persist="disk")
+@st.cache_data(show_spinner="Building archetypes ...", persist="disk", ttl=86400)
 def _cached_archetypes(proj_hash: str, proj_json: str):
     proj_df = pd.read_json(proj_json, orient="records")
     proj_df["eligible_slots"] = proj_df["eligible_slots"].apply(
@@ -579,19 +579,19 @@ def _cached_archetypes(proj_hash: str, proj_json: str):
     return arch_df, proj_with_arch
 
 
-@st.cache_data(show_spinner="Loading wins data ...", persist="disk")
+@st.cache_data(show_spinner="Loading wins data ...", persist="disk", ttl=86400)
 def _cached_wins(wins_path: str, file_hash: str):
     if not os.path.exists(wins_path):
         return pd.DataFrame()
     return _read_csv(wins_path, low_memory=False)
 
 
-@st.cache_data(show_spinner="Loading team payroll history ...", persist="disk")
+@st.cache_data(show_spinner="Loading team payroll history ...", persist="disk", ttl=86400)
 def _cached_payroll_history(data_dir: str):
     return get_team_payroll_history(data_dir)
 
 
-@st.cache_data(show_spinner="Loading team roster ...")
+@st.cache_data(show_spinner="Loading team roster ...", ttl=86400)
 def _cached_team_scenario(
     data_dir: str,
     team: str,
@@ -622,7 +622,7 @@ def _cached_team_scenario(
     )
 
 
-@st.cache_data(show_spinner="Loading player database ...", persist="disk")
+@st.cache_data(show_spinner="Loading player database ...", persist="disk", ttl=86400)
 def _cached_simulator_data(combined_path: str, ind_2025_path: str, file_hash: str) -> pd.DataFrame:
     """Load and merge 2025 combined data with 2025 individual contract columns."""
     comb = _read_csv(combined_path, low_memory=False)
@@ -793,7 +793,7 @@ def _cached_simulator_data(combined_path: str, ind_2025_path: str, file_hash: st
     return comb2025
 
 
-@st.cache_data(show_spinner="Loading 2026 payroll data ...", persist="disk")
+@st.cache_data(show_spinner="Loading 2026 payroll data ...", persist="disk", ttl=86400)
 def _cached_2026_payroll(payroll_dir: str, combined_path: str, dir_hash: str) -> pd.DataFrame:
     """Consolidate all 30-team 2026 payroll xlsx files into a single DataFrame.
 
@@ -961,7 +961,7 @@ def _cached_2026_payroll(payroll_dir: str, combined_path: str, dir_hash: str) ->
     return df26
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _cached_player_history(combined_path: str, file_hash: str) -> pd.DataFrame:
     """Load full multi-year player data for player cards (all years, all players)."""
     df = _read_csv(combined_path, low_memory=False)
@@ -970,7 +970,7 @@ def _cached_player_history(combined_path: str, file_hash: str) -> pd.DataFrame:
     return df
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _cached_war_reliability(combined_path: str, file_hash: str) -> dict:
     """Compute WAR reliability grades from multi-year history (for consistency badges)."""
     df = _read_csv(combined_path, low_memory=False)
@@ -998,7 +998,7 @@ def _cached_war_reliability(combined_path: str, file_hash: str) -> dict:
     return result
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _cached_razzball(razzball_path: str) -> pd.DataFrame:
     """Load razzball MLBAM ID lookup table (local file or R2 URL)."""
     if not razzball_path.startswith("http") and not os.path.exists(razzball_path):
@@ -1011,7 +1011,7 @@ def _cached_razzball(razzball_path: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _cached_mlbam_lookup(razzball_path: str) -> dict[str, str]:
     """Build a dict mapping normalised player name → MLBAM ID string.
 
@@ -1039,7 +1039,7 @@ def _cached_mlbam_lookup(razzball_path: str) -> dict[str, str]:
     return lookup
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _cached_40man_roster(roster_path: str, fhash: str) -> pd.DataFrame:
     """Load the 40-man roster CSV (from local file or R2 URL)."""
     try:
@@ -1050,7 +1050,7 @@ def _cached_40man_roster(roster_path: str, fhash: str) -> pd.DataFrame:
         return pd.DataFrame()
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _load_enriched_roster() -> pd.DataFrame:
     """Load the enriched 2026 roster+payroll dataset (single source of truth).
 
@@ -1097,7 +1097,7 @@ def _load_enriched_roster() -> pd.DataFrame:
     return df
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _build_carousel_players(combined_path: str) -> list[str]:
     """Return top-3 WAR players per team from 2025, ensuring all 30 teams are represented.
 
@@ -1133,7 +1133,7 @@ def _build_carousel_players(combined_path: str) -> list[str]:
         return []
 
 
-@st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False, ttl=86400)
 def _cached_carousel_images(headshots_dir: str, n: int = 90, seed: int = 42,
                              player_list: tuple = ()) -> list:
     """Load headshot PNGs as base64 strings for the landing page carousel.
@@ -3441,7 +3441,7 @@ def _render_efficiency_frontier():
             return
 
     # ── cached load ───────────────────────────────────────────────────────────
-    @st.cache_data(show_spinner=False)
+    @st.cache_data(show_spinner=False, ttl=86400)
     def _load_frontier(path: str, fhash: str) -> pd.DataFrame:
         _AL = {"BAL","BOS","CHW","CLE","DET","HOU","KCR","LAA","MIN","NYY","ATH","SEA","TBR","TEX","TOR"}
         _NL = {"ARI","ATL","CHC","CIN","COL","LAD","MIA","MIL","NYM","PHI","PIT","SDP","SFG","STL","WSN"}
