@@ -516,6 +516,7 @@ def _pt(**overrides) -> dict:
         ),
         margin=dict(l=50, r=20, t=45, b=50),
         showlegend=False,
+        transition=dict(duration=400, easing="cubic-in-out"),
     )
     for k, v in overrides.items():
         if isinstance(v, dict) and isinstance(base.get(k), dict):
@@ -1427,6 +1428,84 @@ footer { display: none !important; }
   padding-top: 0rem !important;
   padding-left: 1rem !important;
   padding-right: 1rem !important;
+  animation: fadeIn 0.4s ease-out;
+}
+
+/* === GLOBAL POLISH — Animations & UX === */
+
+/* Page load fade-in */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Smooth scrolling */
+html { scroll-behavior: smooth; }
+
+/* Custom scrollbar — dark theme */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #0e1720; border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: #253d58; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #3b6fd4; }
+
+/* Card hover lift — applies to expanders, metric cards, rk-answer boxes */
+[data-testid="stExpander"],
+[data-testid="stMetric"],
+.rk-answer {
+  transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+}
+[data-testid="stExpander"]:hover,
+[data-testid="stMetric"]:hover,
+.rk-answer:hover {
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3) !important;
+}
+
+/* Nav active page — sliding underline */
+.mlb-nav a {
+  position: relative;
+  transition: color 0.2s ease;
+}
+.mlb-nav a::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%; width: 0;
+  height: 2px; background: #3b6fd4;
+  transition: width 0.3s ease, left 0.3s ease;
+}
+.mlb-nav a:hover::after { width: 80%; left: 10%; }
+
+/* Alternating table rows + hover */
+[data-testid="stDataFrame"] .dvn-scroller tbody tr:nth-child(even) td {
+  background: rgba(255,255,255,0.015) !important;
+}
+[data-testid="stDataFrame"] .dvn-scroller tbody tr:hover td {
+  background: rgba(255,255,255,0.05) !important;
+  transition: background-color 0.15s ease;
+}
+
+/* Input focus glow */
+[data-baseweb="input"]:focus-within > div,
+[data-baseweb="base-input"]:focus-within > input,
+[data-baseweb="textarea"]:focus-within > textarea {
+  border-color: #4da6ff !important;
+  box-shadow: 0 0 0 2px rgba(77, 166, 255, 0.25) !important;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+/* Team detail card slide-in */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Team logo hover */
+.tpick-logo-card {
+  transition: transform 0.2s ease, filter 0.2s ease;
+}
+.tpick-logo-card:hover {
+  transform: scale(1.08);
+  filter: drop-shadow(0 0 8px rgba(255,255,255,0.15));
 }
 
 /* === ISSUE 3 — Loading state UI === */
@@ -5930,15 +6009,15 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
             st.markdown(f"""<div style="background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
   <div style="font-size:10px;font-weight:700;color:#5a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Career Stages Explained</div>
   <div class="ef-summary-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-    <div style="background:#0d1b2a;border:1px solid #14532d;border-radius:8px;padding:10px 12px;">
+    <div style="background:#0d1b2a;border:1px solid #14532d;border-top:3px solid #22c55e;border-radius:8px;padding:10px 12px;">
       <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:4px;">Pre-Arbitration</div>
       <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">0–3 years service time. Salary near league minimum (~$740K). Teams control rights — often the best value in baseball.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #14b8a6;border-radius:8px;padding:10px 12px;">
+    <div style="background:#0d1b2a;border:1px solid #14b8a6;border-top:3px solid #14b8a6;border-radius:8px;padding:10px 12px;">
       <div style="font-size:13px;font-weight:700;color:#14b8a6;margin-bottom:4px;">Arbitration</div>
       <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">3–6 years service time. Salary negotiated or set by arbitration hearing. Pay rises based on prior performance.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #3b6fd4;border-radius:8px;padding:10px 12px;">
+    <div style="background:#0d1b2a;border:1px solid #3b6fd4;border-top:3px solid #60a5fa;border-radius:8px;padding:10px 12px;">
       <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:4px;">Free Agent</div>
       <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">6+ years service time. Player signs on the open market. Full market-rate salary — highest cost per WAR.</div>
     </div>
@@ -7841,26 +7920,72 @@ def _render_rankings_page():
     def _full(row):
         return row.get("Team_Full") or row["Team"]
 
-    # All 6 team award boxes in a single CSS grid
-    _boxes = "".join([
-        _qa("🏆", "MOST EFFICIENT", _full(_best_eff),
-            f"${_best_eff['dollar_gap_M']:.0f}M below the line", "#1e4a1e", "", _best_eff["Team"]),
-        _qa("📈", "TOP OVERPERFORMER", _full(_overperf),
-            f"+{_overperf['wins_vs_pred']:.1f} wins vs forecast", "#0c2218", "", _overperf["Team"]),
-        _qa("💰", "BEST &#36;/fWAR", _full(_best_dpw),
-            f"&#36;{_best_dpw['DPW']:.1f}M per fWAR", "#1a1228", "", _best_dpw["Team"]),
-        _qa("🔴", "LEAST EFFICIENT", _full(_worst_eff),
-            f"${_worst_eff['dollar_gap_M']:.0f}M above the line", "#3d1f00", "", _worst_eff["Team"]),
-        _qa("⭐", "TOP fWAR", _full(_top_war),
-            f"{_top_war['team_WAR']:.1f} total fWAR", team_abbr=_top_war["Team"]),
-        _qa("🏅", "MOST WINS", _full(_top_wins),
-            f"{int(_top_wins['Wins'])} wins", team_abbr=_top_wins["Team"]),
-    ])
-    st.markdown(
-        f"<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;'>"
-        f"{_boxes}</div>",
-        unsafe_allow_html=True,
-    )
+    # ── Clickable highlight boxes → control which tab shows below ───────────
+    # Box → tab mapping
+    _BOX_TAB = {
+        "most_efficient": "efficiency", "top_overperformer": "winperf",
+        "best_dpw": "salary", "least_efficient": "efficiency",
+        "top_fwar": "fwar", "most_wins": "winperf",
+        "p_top_fwar": "fwar", "p_contract_val": "salary", "p_stability": "fwar",
+    }
+    if "rk_active_tab" not in st.session_state:
+        st.session_state["rk_active_tab"] = "efficiency"
+    if "rk_selected_box" not in st.session_state:
+        st.session_state["rk_selected_box"] = "most_efficient"
+    if "rk_box_clicked" not in st.session_state:
+        st.session_state["rk_box_clicked"] = False
+
+    _sel_box = st.session_state["rk_selected_box"]
+    _act_tab = st.session_state["rk_active_tab"]
+
+    # CSS for clickable boxes + highlight
+    st.markdown("""<style>
+    .rk-box-sel { border-color:#f59e0b !important; box-shadow:0 0 12px rgba(245,158,11,0.3) !important; }
+    .rk-answer { cursor:pointer; transition:border-color 0.2s,box-shadow 0.2s; }
+    @keyframes gentle-pulse { 0%,100%{opacity:0.4;} 50%{opacity:1;} }
+    .rk-hint { text-align:center; color:#4a687e; font-size:0.82rem; margin:0.6rem 0;
+               animation: gentle-pulse 2.5s ease-in-out infinite; }
+    </style>""", unsafe_allow_html=True)
+
+    # Render boxes as st.button grid
+    _box_defs = [
+        ("most_efficient", "🏆", "MOST EFFICIENT", _full(_best_eff),
+         f"${_best_eff['dollar_gap_M']:.0f}M below the line", _best_eff["Team"]),
+        ("top_overperformer", "📈", "TOP OVERPERFORMER", _full(_overperf),
+         f"+{_overperf['wins_vs_pred']:.1f} wins vs forecast", _overperf["Team"]),
+        ("best_dpw", "💰", "BEST $/fWAR", _full(_best_dpw),
+         f"${_best_dpw['DPW']:.1f}M per fWAR", _best_dpw["Team"]),
+        ("least_efficient", "🔴", "LEAST EFFICIENT", _full(_worst_eff),
+         f"${_worst_eff['dollar_gap_M']:.0f}M above the line", _worst_eff["Team"]),
+        ("top_fwar", "⭐", "TOP fWAR", _full(_top_war),
+         f"{_top_war['team_WAR']:.1f} total fWAR", _top_war["Team"]),
+        ("most_wins", "🏅", "MOST WINS", _full(_top_wins),
+         f"{int(_top_wins['Wins'])} wins", _top_wins["Team"]),
+    ]
+
+    for row_start in range(0, 6, 3):
+        cols = st.columns(3)
+        for ci in range(3):
+            bi = row_start + ci
+            box_id, icon, label, team_name, val_str, team_abbr = _box_defs[bi]
+            is_sel = box_id == _sel_box
+            with cols[ci]:
+                _logo_u = _team_logo_url(team_abbr)
+                _sel_cls = "rk-box-sel" if is_sel else ""
+                st.markdown(
+                    f"<div class='rk-answer {_sel_cls}'>"
+                    f"<img src='{_logo_u}' width='36' height='36' style='object-fit:contain;margin-bottom:4px;' onerror=\"this.style.display='none'\">"
+                    f"<div class='rk-q'>{label}</div>"
+                    f"<div class='rk-team'>{team_name}</div>"
+                    f"<div class='rk-val'>{val_str}</div></div>",
+                    unsafe_allow_html=True,
+                )
+                if st.button("Select ↓", key=f"rk_box_{box_id}", use_container_width=True,
+                             type="primary" if is_sel else "secondary"):
+                    st.session_state["rk_selected_box"] = box_id
+                    st.session_state["rk_active_tab"] = _BOX_TAB[box_id]
+                    st.session_state["rk_box_clicked"] = True
+                    st.rerun()
 
     # ── Player award boxes (top fWAR, best contract value, best stability) ──
     try:
@@ -7912,33 +8037,62 @@ def _render_rankings_page():
                 + "</div>"
             )
 
-        _pboxes = ""
+        _p_box_defs = []
         if _p_top_war is not None:
-            _pboxes += _player_card(f"#1 fWAR ({sel_year})", str(_p_top_war["Player"]),
-                                     str(_p_top_war["Team"]), f"{_p_top_war['WAR_Total']:.1f} fWAR")
+            _p_box_defs.append(("p_top_fwar", f"#1 fWAR ({sel_year})", str(_p_top_war["Player"]),
+                                str(_p_top_war["Team"]), f"{_p_top_war['WAR_Total']:.1f} fWAR", ""))
         if _p_best_val is not None:
-            _pboxes += _player_card("TOP CONTRACT VALUE", str(_p_best_val["Player"]),
-                                     str(_p_best_val["Team"]), f"{_p_best_val['_wpm']:.2f} fWAR/&#36;M",
-                                     f"{_p_best_val['WAR_Total']:.1f} fWAR · &#36;{_p_best_val['Salary_M']:.1f}M")
+            _p_box_defs.append(("p_contract_val", "TOP CONTRACT VALUE", str(_p_best_val["Player"]),
+                                str(_p_best_val["Team"]), f"{_p_best_val['_wpm']:.2f} fWAR/$M",
+                                f"{_p_best_val['WAR_Total']:.1f} fWAR · ${_p_best_val['Salary_M']:.1f}M"))
         if _p_best_wsr is not None:
-            _pboxes += _player_card("BEST fWAR STABILITY", str(_p_best_wsr["Player"]),
-                                     str(_p_best_wsr["Team"]), f"{_p_best_wsr['WSR']:.2f} WSR",
-                                     f"Avg {_p_best_wsr['_mean']:.1f} fWAR · {int(_p_best_wsr['_n'])} seasons")
-        if _pboxes:
-            st.markdown(
-                f"<div style='display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:8px;'>"
-                f"{_pboxes}</div>",
-                unsafe_allow_html=True,
-            )
+            _p_box_defs.append(("p_stability", "BEST fWAR STABILITY", str(_p_best_wsr["Player"]),
+                                str(_p_best_wsr["Team"]), f"{_p_best_wsr['WSR']:.2f} WSR",
+                                f"Avg {_p_best_wsr['_mean']:.1f} fWAR · {int(_p_best_wsr['_n'])} seasons"))
+
+        if _p_box_defs:
+            pcols = st.columns(len(_p_box_defs))
+            for pi, (box_id, title, pname, pteam, pval, psub) in enumerate(_p_box_defs):
+                is_sel = box_id == _sel_box
+                _sel_cls = "rk-box-sel" if is_sel else ""
+                mid = _mlbam.get(_fix_player_name(pname), "")
+                img_html = (f"<img src='{_headshot_url(mid, 120)}' width='60' height='60' "
+                            f"style='border-radius:50%;object-fit:cover;margin-bottom:4px;' "
+                            f"onerror=\"this.style.display='none'\">") if mid else ""
+                with pcols[pi]:
+                    st.markdown(
+                        f"<div class='rk-answer {_sel_cls}'>"
+                        f"<div class='rk-q'>{title}</div>{img_html}"
+                        f"<div class='rk-team'>{pname}</div>"
+                        f"<div style='font-size:0.75rem;color:#93b8d8;'>{pteam}</div>"
+                        f"<div class='rk-val'>{pval}</div>"
+                        + (f"<div style='font-size:0.62rem;color:#4a687e;'>{psub}</div>" if psub else "")
+                        + "</div>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("Select ↓", key=f"rk_box_{box_id}", use_container_width=True,
+                                 type="primary" if is_sel else "secondary"):
+                        st.session_state["rk_selected_box"] = box_id
+                        st.session_state["rk_active_tab"] = _BOX_TAB[box_id]
+                        st.session_state["rk_box_clicked"] = True
+                        st.rerun()
     except Exception:
         pass
 
-    st.markdown("<div style='margin-top:0.8rem;'></div>", unsafe_allow_html=True)
+    # Animated hint (disappears after first click)
+    if not st.session_state.get("rk_box_clicked"):
+        st.markdown("<div class='rk-hint'>👆 Click a box above to explore</div>", unsafe_allow_html=True)
 
-    # ── Ranking tabs ─────────────────────────────────────────────────────────
-    rt1, rt2, rt3, rt4 = st.tabs([
-        "🏆 Efficiency", "⭐ fWAR", "💰 Salary", "📈 Win Performance",
-    ])
+    st.markdown("<div style='margin-top:0.5rem;'></div>", unsafe_allow_html=True)
+
+    # ── Content area — controlled by selected box ──────────────────────────
+    _TAB_LABELS = {"efficiency": "🏆 Efficiency", "fwar": "⭐ fWAR",
+                   "salary": "💰 Salary", "winperf": "📈 Win Performance"}
+    st.markdown(
+        f"<div style='font-size:0.88rem;font-weight:700;color:#d6e8f8;margin:0.5rem 0 0.4rem;'>"
+        f"{_TAB_LABELS.get(_act_tab, '')}</div>",
+        unsafe_allow_html=True,
+    )
 
     def _hbar(df_in, x_col, color_fn, title, x_label, text_fn=None, zero_line=False):
         """Render a themed horizontal bar chart for rankings."""
@@ -7969,7 +8123,7 @@ def _render_rankings_page():
         return fig
 
     # ── Tab 1: Efficiency ─────────────────────────────────────────────────────
-    with rt1:
+    if _act_tab == "efficiency":
         st.markdown(
             "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
             "Dollar gap from the <b>Cost Effective Line</b> — how much more or less each team "
@@ -8014,8 +8168,8 @@ def _render_rankings_page():
                 height=min(60 + len(_e) * 35, 720),
             )
 
-    # ── Tab 2: WAR ────────────────────────────────────────────────────────────
-    with rt2:
+    # ── Tab 2: fWAR ───────────────────────────────────────────────────────────
+    if _act_tab == "fwar":
         st.markdown(
             "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
             "Total team WAR for the selected season across all pitchers and position players. "
@@ -8058,7 +8212,7 @@ def _render_rankings_page():
             )
 
     # ── Tab 3: Salary ─────────────────────────────────────────────────────────
-    with rt3:
+    if _act_tab == "salary":
         st.markdown(
             "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
             "Team payroll for the selected season. Use $/WAR to compare how much each team "
@@ -8104,7 +8258,7 @@ def _render_rankings_page():
             )
 
     # ── Tab 4: Win Performance ────────────────────────────────────────────────
-    with rt4:
+    if _act_tab == "winperf":
         st.markdown(
             "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
             "Actual wins minus the wins <b>predicted by payroll</b> from the league regression. "
@@ -8800,25 +8954,28 @@ def _render_team_analysis_page():
         st.session_state["team_analysis_sel"] = "NYY"
     sel_team = st.session_state.get("team_analysis_sel", "NYY")
 
-    def _logo_card_html(tm, is_active):
-        _url = _team_logo_url(tm)
-        _bdr = "2px solid #3b82f6" if is_active else "1px solid transparent"
-        _bg = "rgba(59,130,246,0.1)" if is_active else "transparent"
-        _shadow = "box-shadow:0 0 12px #3b82f644;" if is_active else ""
-        _name = _ABBR_TO_FULL.get(tm, tm)
-        return (
-            f'<a href="?page=team&sel_team={tm}" target="_self" style="text-decoration:none;">'
-            f'<div style="background:{_bg};border:{_bdr};border-radius:8px;'
-            f'padding:6px 4px 4px;text-align:center;{_shadow}cursor:pointer;'
-            f'transition:transform 0.15s;" '
-            f'onmouseover="this.style.transform=\'translateY(-2px)\'" '
-            f'onmouseout="this.style.transform=\'none\'">'
-            f'<img src="{_url}" width="55" height="55" style="object-fit:contain;" '
-            f'onerror="this.outerHTML=\'<div style=&quot;font-size:1rem;font-weight:700;'
-            f'color:#e8f4ff;line-height:55px;&quot;>{tm}</div>\'">'
-            f'<div style="font-size:0.75rem;font-weight:700;color:#e8f4ff;margin-top:3px;">{_name}</div>'
-            f'</div></a>'
-        )
+    # Inject CSS to hide team picker button chrome
+    st.markdown("""<style>
+    .tpick-btn [data-testid="stButton"] > button {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+        outline: none !important;
+        padding: 0 !important;
+        margin: -4rem 0 0 0 !important;
+        height: 5rem !important;
+        width: 100% !important;
+        cursor: pointer !important;
+        color: transparent !important;
+    }
+    .tpick-btn [data-testid="stButton"] > button:hover {
+        background: transparent !important;
+        border: none !important;
+    }
+    .tpick-btn [data-testid="stButton"] > button * {
+        color: transparent !important;
+    }
+    </style>""", unsafe_allow_html=True)
 
     def _render_league_grid(league_name, divs):
         st.markdown(
@@ -8827,14 +8984,33 @@ def _render_team_analysis_page():
             unsafe_allow_html=True,
         )
         for div_name, teams in divs:
-            cards = "".join(_logo_card_html(tm, tm == sel_team) for tm in teams)
             st.markdown(
                 f"<div style='font-size:0.62rem;color:#d6e8f8;font-weight:600;"
-                f"margin:0.2rem 0 0.1rem;'>{div_name}</div>"
-                f"<div style='display:grid;grid-template-columns:repeat(5,1fr);gap:6px;"
-                f"margin-bottom:6px;'>{cards}</div>",
+                f"margin:0.2rem 0 0.1rem;'>{div_name}</div>",
                 unsafe_allow_html=True,
             )
+            tcols = st.columns(5)
+            for ti, tm in enumerate(teams):
+                _url = _team_logo_url(tm)
+                is_active = tm == sel_team
+                _bdr = "2px solid #3b82f6" if is_active else "1px solid transparent"
+                _bg = "rgba(59,130,246,0.1)" if is_active else "transparent"
+                _shadow = "box-shadow:0 0 12px #3b82f644;" if is_active else ""
+                _name = _ABBR_TO_FULL.get(tm, tm)
+                with tcols[ti]:
+                    st.markdown(
+                        f"<div class='tpick-logo-card' style='background:{_bg};border:{_bdr};border-radius:8px;"
+                        f"padding:6px 4px 4px;text-align:center;{_shadow}'>"
+                        f"<img src='{_url}' width='55' height='55' style='object-fit:contain;'>"
+                        f"<div style='font-size:0.75rem;font-weight:700;color:#e8f4ff;margin-top:3px;'>{_name}</div>"
+                        f"</div>",
+                        unsafe_allow_html=True,
+                    )
+                    st.markdown("<div class='tpick-btn'>", unsafe_allow_html=True)
+                    if st.button(" ", key=f"tpick_{tm}", use_container_width=True):
+                        st.session_state["team_analysis_sel"] = tm
+                        st.rerun()
+                    st.markdown("</div>", unsafe_allow_html=True)
 
     al_col, nl_col = st.columns(2, gap="medium")
     with al_col:
@@ -8967,7 +9143,8 @@ def _render_team_analysis_page():
 
     st.markdown(
         f"<div style='background:linear-gradient(135deg,{_tc_dark},{_tc_dark}cc);border:1px solid {_tc_primary}44;"
-        f"border-left:4px solid {_tc_primary};border-radius:10px;padding:18px 22px;margin-bottom:14px;'>"
+        f"border-left:4px solid {_tc_primary};border-radius:10px;padding:18px 22px;margin-bottom:14px;"
+        f"animation:slideUp 0.4s ease-out;'>"
         f"<div style='display:flex;align-items:center;gap:14px;margin-bottom:12px;'>"
         f"<img src='{_logo_url}' width='52' height='52' style='object-fit:contain;' onerror=\"this.style.display='none'\">"
         f"<div style='font-size:1.5rem;font-weight:800;color:#e8f4ff;'>{_full_name}</div>"
@@ -10022,6 +10199,13 @@ def _render_glossary_page():
 
 def _render_feedback_page():
     """Feedback & suggestions page with built-in form."""
+    # Field spacing CSS
+    st.markdown("""<style>
+    .fb-form [data-testid="stTextArea"],
+    .fb-form [data-testid="stTextInput"],
+    .fb-form [data-testid="stSelectbox"],
+    .fb-form [data-testid="stRadio"] { margin-bottom: 1.2rem !important; }
+    </style>""", unsafe_allow_html=True)
     st.markdown(
         "<h2 style='margin-bottom:0.3rem;'>💬 Feedback & Suggestions</h2>"
         "<p style='color:#93b8d8;font-size:0.88rem;margin-bottom:1.2rem;'>"
@@ -10059,30 +10243,46 @@ def _render_feedback_page():
 
         if st.button("Submit Feedback", key="fb_page_submit", type="primary"):
             if _fb_text.strip():
-                _sent = False
+                import streamlit.components.v1 as _stc
+                _stc.html("""
+                <div style="text-align:center;padding:1.5rem 0;">
+                  <svg width="60" height="60" viewBox="0 0 60 60">
+                    <circle cx="30" cy="30" r="28" fill="none" stroke="#22c55e" stroke-width="3"
+                      stroke-dasharray="176" stroke-dashoffset="176"
+                      style="animation:circle-draw 0.5s ease-out forwards;" />
+                    <path d="M18 30 L26 38 L42 22" fill="none" stroke="#22c55e" stroke-width="3"
+                      stroke-linecap="round" stroke-linejoin="round"
+                      stroke-dasharray="40" stroke-dashoffset="40"
+                      style="animation:check-draw 0.3s ease-out 0.4s forwards;" />
+                  </svg>
+                  <div style="color:#22c55e;font-size:1.1rem;font-weight:700;margin-top:0.5rem;
+                    opacity:0;animation:fadeInText 0.3s ease-out 0.6s forwards;">
+                    Thanks for your feedback!</div>
+                </div>
+                <style>
+                @keyframes circle-draw { to { stroke-dashoffset: 0; } }
+                @keyframes check-draw { to { stroke-dashoffset: 0; } }
+                @keyframes fadeInText { to { opacity: 1; } }
+                </style>
+                """, height=140)
+                # Fire-and-forget: send to Google Sheet with short timeout
                 try:
                     if _requests_available:
-                        _payload = {
-                            "type": _fb_type,
-                            "page": _fb_page,
-                            "feedback": _fb_text.strip(),
-                            "email": _fb_email.strip() if _fb_email else "",
-                        }
-                        _r = _requests.post(
-                            "https://script.google.com/macros/s/AKfycbxfujsC1uRLp1bD9Bk4JyK6L8Z7ZT4fBgy6vaFRgwGOJc9NYfyX76-9cJ_64cvV6e-NMQ/exec",
-                            json=_payload, timeout=10,
-                        )
-                        _sent = _r.status_code == 200
+                        import threading
+                        def _send():
+                            try:
+                                _requests.post(
+                                    "https://script.google.com/macros/s/AKfycbxfujsC1uRLp1bD9Bk4JyK6L8Z7ZT4fBgy6vaFRgwGOJc9NYfyX76-9cJ_64cvV6e-NMQ/exec",
+                                    json={"type": _fb_type, "page": _fb_page,
+                                          "feedback": _fb_text.strip(),
+                                          "email": _fb_email.strip() if _fb_email else ""},
+                                    timeout=15,
+                                )
+                            except Exception:
+                                pass
+                        threading.Thread(target=_send, daemon=True).start()
                 except Exception:
                     pass
-                if _sent:
-                    st.success("Thank you! Your feedback has been submitted successfully.")
-                else:
-                    st.success(
-                        "Thank you for your feedback! We review every submission and use it to "
-                        "prioritize improvements to MLB Toolbox."
-                    )
-                st.balloons()
             else:
                 st.warning("Please enter some feedback text before submitting.")
 
