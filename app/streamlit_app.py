@@ -6732,19 +6732,11 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
 # ---------------------------------------------------------------------------
 
 def _render_league_analysis():
-    """Render the League Efficiency Analysis page."""
-    import subprocess
-
-    # ── Interactive player-level Cost Effective Line ─────────────────────────
-    st.markdown("### Player Analysis")
-    st.caption(
-        "Interactive WAR vs Salary analysis for every player (2021–2025). "
-        "Fit the PPEL regression line, colour by career stage or Pay-Performance Ratio, "
-        "and identify the most underpaid / overpaid players in the league."
-    )
-    _render_efficiency_frontier()
-
-    _render_feedback_widget("league")
+    from pages.player_analysis import render
+    render(_data_url, _read_csv, _R2_MODE, _cached_simulator_data,
+           _cached_mlbam_lookup, _RAZZBALL_PATH, _file_hash,
+           _load_base_config, _resolve_data_path, _DEFAULT_CONFIG,
+           _cached_2026_payroll, _dir_hash)
 
 
 # (Team-level league sections moved to /rankings page)
