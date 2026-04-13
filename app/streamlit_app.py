@@ -8956,25 +8956,7 @@ def _render_team_analysis_page():
 
     # Inject CSS to hide team picker button chrome
     st.markdown("""<style>
-    .tpick-btn [data-testid="stButton"] > button {
-        background: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        outline: none !important;
-        padding: 0 !important;
-        margin: -4rem 0 0 0 !important;
-        height: 5rem !important;
-        width: 100% !important;
-        cursor: pointer !important;
-        color: transparent !important;
-    }
-    .tpick-btn [data-testid="stButton"] > button:hover {
-        background: transparent !important;
-        border: none !important;
-    }
-    .tpick-btn [data-testid="stButton"] > button * {
-        color: transparent !important;
-    }
+    /* Team picker — buttons hidden behind logo overlay */
     </style>""", unsafe_allow_html=True)
 
     def _render_league_grid(league_name, divs):
@@ -8998,26 +8980,29 @@ def _render_team_analysis_page():
                 _shadow = "box-shadow:0 0 12px #3b82f644;" if is_active else ""
                 _name = _ABBR_TO_FULL.get(tm, tm)
                 with tcols[ti]:
+                    # Button first — clickable area
+                    if st.button(tm, key=f"tpick_{tm}", use_container_width=True):
+                        st.session_state["team_analysis_sel"] = tm
+                        st.rerun()
+                    # Logo overlay on top of button
                     st.markdown(
-                        f"<div class='tpick-logo-card' style='background:{_bg};border:{_bdr};border-radius:8px;"
+                        f"<div class='tpick-logo-card' style='margin-top:-2.8rem;pointer-events:none;position:relative;z-index:1;"
+                        f"background:{_bg};border:{_bdr};border-radius:8px;"
                         f"padding:6px 4px 4px;text-align:center;{_shadow}'>"
                         f"<img src='{_url}' width='55' height='55' style='object-fit:contain;'>"
                         f"<div style='font-size:0.75rem;font-weight:700;color:#e8f4ff;margin-top:3px;'>{_name}</div>"
                         f"</div>",
                         unsafe_allow_html=True,
                     )
-                    st.markdown("<div class='tpick-btn'>", unsafe_allow_html=True)
-                    if st.button(" ", key=f"tpick_{tm}", use_container_width=True):
-                        st.session_state["team_analysis_sel"] = tm
-                        st.rerun()
-                    st.markdown("</div>", unsafe_allow_html=True)
 
+    st.markdown("<div class='tpick-zone'>", unsafe_allow_html=True)
     al_col, nl_col = st.columns(2, gap="medium")
     with al_col:
         _render_league_grid("American League", _AL_DIVS)
     with nl_col:
         _render_league_grid("National League", _NL_DIVS)
 
+    st.markdown("</div>", unsafe_allow_html=True)  # close tpick-zone
     # Spacer between team picker and content
     st.markdown("<div style='margin-top:1rem;'></div>", unsafe_allow_html=True)
 
