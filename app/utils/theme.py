@@ -123,10 +123,16 @@ def render_nav_bar():
 [data-testid="stMainBlockContainer"] {
   background: #141d2e !important;
 }
+/* === Hide Streamlit default sidebar (we use custom nav bar) === */
 [data-testid="stSidebar"],
 [data-testid="stSidebarContent"] {
-  background: #111a24 !important;
-  border-right: 1px solid #1e3250 !important;
+  display: none !important;
+}
+[data-testid="stSidebarCollapsedControl"] {
+  display: none !important;
+}
+.stMainBlockContainer {
+  margin-left: 0 !important;
 }
 /* === ISSUE 1 — Hide Streamlit default toolbar/header/footer === */
 header[data-testid="stHeader"] { display: none !important; }

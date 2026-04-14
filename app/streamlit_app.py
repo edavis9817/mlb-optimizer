@@ -38,7 +38,7 @@ st.set_page_config(
     page_title="MLB Toolbox",
     page_icon="\u26be",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="collapsed",
 )
 
 # Override Streamlit's default meta tags for link previews (iOS, iMessage, etc.)

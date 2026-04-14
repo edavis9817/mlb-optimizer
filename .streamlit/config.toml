@@ -17,6 +17,7 @@ gatherUsageStats = false
 
 [client]
 toolbarMode = "minimal"
+showSidebarNavigation = false
 
 [cache]
 # Persistent disk cache for multi-user performance

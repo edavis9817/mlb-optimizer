@@ -119,7 +119,7 @@ def render(*_args, **_kwargs):
     st.markdown(
         "<div class='rk-hdr'>"
         "<h2>\U0001f3c6 MLB Toolbox Rankings</h2>"
-        "<div class='rk-sub'>The 30-team report card on spending vs. winning.</div>"
+        "<div class='rk-sub' style='font-size:0.88rem;color:#93b8d8;'>The 30-team report card on spending vs. winning.</div>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -130,7 +130,7 @@ def render(*_args, **_kwargs):
     with _hint_col:
         st.markdown(
             "<div style='padding-top:0.35rem;font-size:1rem;color:#93b8d8;font-weight:700;'>"
-            "Click a box to get started</div>",
+            "Click a box to get started, and start exploring more in-depth</div>",
             unsafe_allow_html=True,
         )
     with _yr_col:
