@@ -51,12 +51,15 @@ def _stage_card(stage_key: str, big_val: str, sub_text: str, unit: str = ""):
 def render(*_args, **_kwargs):
     """Rankings page entry point."""
 
-    # ── Query-param driven box selection ──────────────────────────────────────
+    # ── Query-param driven box + tab selection ──────────────────────────────────
     _qp_box = st.query_params.get("rk_box")
     _qp_yr  = st.query_params.get("rk_year")
+    _qp_tab = st.query_params.get("rk_tab")
     if _qp_box:
         st.session_state["rk_selected_box"] = _qp_box
         st.session_state["rk_box_clicked"] = True
+    if _qp_tab:
+        st.session_state["rk_active_tab"] = _qp_tab
 
     # ── CSS ──────────────────────────────────────────────────────────────────
     st.markdown("""<style>
@@ -65,9 +68,10 @@ def render(*_args, **_kwargs):
 .rk-hdr h2{margin:0;font-size:1.25rem;color:#d6e8f8;font-weight:700;}
 .rk-hdr .rk-sub{font-size:0.72rem;color:#7a9ebc;margin-top:0.15rem;}
 .rk-answer{background:#1c2a42;border:1px solid #1e3250;border-radius:10px;
-  padding:0.8rem 1rem;text-align:center;height:160px;
+  padding:0.6rem 0.8rem;text-align:center;height:165px;min-height:165px;max-height:165px;
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;}
+  transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;overflow:hidden;
+  width:100%;}
 .rk-answer:hover{border-color:#2a4060;box-shadow:0 0 8px rgba(93,202,165,0.1);}
 .rk-answer .rk-q{font-size:0.72rem;color:#93b8d8;
   letter-spacing:0.05em;margin-bottom:0.2rem;font-weight:600;}
@@ -341,19 +345,12 @@ def render(*_args, **_kwargs):
                      f"onerror=\"this.style.display='none'\">") if logo_url else ""
         if img_html:
             _logo_tag = img_html
-        # Team name links to team analysis page if we have an abbreviation
-        _team_html = team_name
-        if team_abbr:
-            _team_html = (f"<a href='?page=team&sel_team={team_abbr}' target='_self' "
-                          f"style='color:#d6e8f8;text-decoration:none;' "
-                          f"onmouseover=\"this.style.textDecoration='underline'\" "
-                          f"onmouseout=\"this.style.textDecoration='none'\">{team_name}</a>")
         return (
-            f"<a href='{_href}' target='_self' style='text-decoration:none;color:inherit;'>"
+            f"<a href='{_href}' target='_self' style='text-decoration:none;color:inherit;display:block;'>"
             f"<div class='rk-answer {_sel_cls}'>"
             f"{_logo_tag}"
             f"<div class='rk-q'>{label}</div>"
-            f"<div class='rk-team'>{_team_html}</div>"
+            f"<div class='rk-team'>{team_name}</div>"
             f"<div class='rk-val'>{val_str}</div>"
             f"</div></a>"
         )
@@ -363,18 +360,12 @@ def render(*_args, **_kwargs):
         _box_tab = _BOX_TAB.get(box_id, "efficiency")
         _href = f"?page=rankings&rk_box={box_id}&rk_year={sel_year}&rk_tab={_box_tab}"
         mid = _mlbam.get(_fix_player_name(pname), "") if _mlbam else ""
-        # Headshot links to team analysis page for this player's team
-        _team_link = f"?page=team&sel_team={pteam}"
-        _img = (f"<a href='{_team_link}' target='_self' style='display:inline-block;'>"
-                f"<img src='{_headshot_url(mid, 120)}' width='60' height='60' loading='lazy' "
-                f"style='border-radius:50%;object-fit:cover;margin-bottom:4px;"
-                f"border:2px solid transparent;transition:border-color 0.2s;' "
-                f"onmouseover=\"this.style.borderColor='#5dc9a5'\" "
-                f"onmouseout=\"this.style.borderColor='transparent'\" "
-                f"onerror=\"this.style.display='none'\"></a>") if mid else ""
+        _img = (f"<img src='{_headshot_url(mid, 120)}' width='50' height='50' loading='lazy' "
+                f"style='border-radius:50%;object-fit:cover;margin-bottom:4px;' "
+                f"onerror=\"this.style.display='none'\">") if mid else ""
         _sub_html = f"<div style='font-size:0.62rem;color:#4a687e;'>{psub}</div>" if psub else ""
         return (
-            f"<a href='{_href}' target='_self' style='text-decoration:none;color:inherit;'>"
+            f"<a href='{_href}' target='_self' style='text-decoration:none;color:inherit;display:block;'>"
             f"<div class='rk-answer {_sel_cls}'>"
             f"<div class='rk-q'>{title}</div>{_img}"
             f"<div class='rk-team'>{pname}</div>"
@@ -460,7 +451,7 @@ def render(*_args, **_kwargs):
                                img_html="<div style='font-size:1.3rem;margin-bottom:4px;'>\U0001f4b5</div>"))
     with _r5c2:
         _render_box(_box_html("best_position", "MOST EFFICIENT POSITION",
-                               _best_pos_val, f"Position: {_best_pos_name}",
+                               _best_pos_name, _best_pos_val,
                                img_html="<div style='font-size:1.3rem;margin-bottom:4px;'>\U0001f3df\ufe0f</div>"))
     with _r5c3:
         pass
@@ -520,11 +511,6 @@ def render(*_args, **_kwargs):
     _tab_html += "</div>"
     st.markdown(_tab_html, unsafe_allow_html=True)
 
-    # Read tab from query params
-    _qp_tab = st.query_params.get("rk_tab")
-    if _qp_tab and _qp_tab in _TAB_ORDER:
-        _act_tab = _qp_tab
-        st.session_state["rk_active_tab"] = _qp_tab
 
     # ── Tab 1: Efficiency ─────────────────────────────────────────────────────
     if _act_tab == "efficiency":
