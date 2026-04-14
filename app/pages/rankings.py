@@ -356,7 +356,7 @@ def render(*_args, **_kwargs):
     def _box_html(box_id, label, team_name, val_str, logo_url="", img_html="", team_abbr=""):
         _sel_cls = "rk-box-sel" if box_id == _sel_box else ""
         _box_tab = _BOX_TAB.get(box_id, "efficiency")
-        _href = f"?page=rankings&rk_box={box_id}&rk_year={sel_year}&rk_tab={_box_tab}"
+        _href = f"?page=rankings&rk_box={box_id}&rk_year={sel_year}&rk_tab={_box_tab}#rk-content"
         _logo_tag = (f"<img src='{logo_url}' width='36' height='36' "
                      f"style='object-fit:contain;margin-bottom:4px;' "
                      f"onerror=\"this.style.display='none'\">") if logo_url else ""
@@ -375,7 +375,7 @@ def render(*_args, **_kwargs):
     def _player_box_html(box_id, title, pname, pteam, pval, psub=""):
         _sel_cls = "rk-box-sel" if box_id == _sel_box else ""
         _box_tab = _BOX_TAB.get(box_id, "efficiency")
-        _href = f"?page=rankings&rk_box={box_id}&rk_year={sel_year}&rk_tab={_box_tab}"
+        _href = f"?page=rankings&rk_box={box_id}&rk_year={sel_year}&rk_tab={_box_tab}#rk-content"
         mid = _mlbam.get(_fix_player_name(pname), "") if _mlbam else ""
         _img = (f"<img src='{_headshot_url(mid, 120)}' width='50' height='50' loading='lazy' "
                 f"style='border-radius:50%;object-fit:cover;margin-bottom:4px;' "
@@ -510,6 +510,9 @@ def render(*_args, **_kwargs):
         return fig
 
     # ── Tabs ─────────────────────────────────────────────────────────────────
+    # Scroll anchor for box clicks
+    st.markdown("<div id='rk-content'></div>", unsafe_allow_html=True)
+
     # ── Custom tab bar ─────────────────────────────────────────────────────────
     _TAB_NAMES = {
         "efficiency": "\U0001f3c6 Efficiency",
@@ -526,7 +529,7 @@ def render(*_args, **_kwargs):
     _tab_html = "<div class='rk-tabs'>"
     for _tk in _TAB_ORDER:
         _cls = "rk-tab rk-tab-active" if _tk == _act_tab else "rk-tab"
-        _tab_html += (f"<a href='?page=rankings&rk_box={_sel_box}&rk_year={sel_year}&rk_tab={_tk}' "
+        _tab_html += (f"<a href='?page=rankings&rk_box={_sel_box}&rk_year={sel_year}&rk_tab={_tk}#rk-content' "
                       f"target='_self' class='{_cls}'>{_TAB_NAMES[_tk]}</a>")
     _tab_html += "</div>"
     st.markdown(_tab_html, unsafe_allow_html=True)

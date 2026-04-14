@@ -148,7 +148,7 @@ footer { display: none !important; }
   padding-top: 0rem !important;
   padding-left: 1rem !important;
   padding-right: 1rem !important;
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.15s ease-out;
 }
 [data-testid="stMainBlockContainer"] {
   padding-top: 0.5rem !important;
@@ -159,14 +159,20 @@ footer { display: none !important; }
 
 /* === GLOBAL POLISH — Animations & UX === */
 
-/* Page load fade-in */
+/* Page load fade-in — fast to mask rerun flash */
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-/* Smooth scrolling */
-html { scroll-behavior: smooth; }
+/* Dim content while Streamlit is processing a rerun */
+.stApp[data-test-script-state="running"] .block-container {
+  opacity: 0.85;
+  transition: opacity 0.08s ease;
+}
+
+/* Prevent jarring scroll-to-top on rerun */
+html { scroll-behavior: auto !important; }
 
 /* Custom scrollbar — dark theme */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
