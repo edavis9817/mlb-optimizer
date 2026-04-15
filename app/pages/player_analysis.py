@@ -271,9 +271,9 @@ div[data-testid='column']:first-of-type .stSlider{
         df["_efficient"]         = df["residual_pct"] <= _eff_thresh
 
         _STAGE_COLORS = {
-            "Free Agent":      "#06d6a0",
-            "Arbitration":     "#fbbf24",
-            "Pre-Arbitration": "#38bdf8",
+            "FA":      "#06d6a0",
+            "Arb":     "#fbbf24",
+            "Pre-Arb": "#38bdf8",
         }
 
         # -- KPI values for page header ----------------------------------------
@@ -380,6 +380,23 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
   </div>
 </div>""", unsafe_allow_html=True)
 
+            # -- Player search / highlight -------------------------------------
+            _hl_col, _hl_rst_col = st.columns([3, 1])
+            with _hl_col:
+                _player_hl = st.multiselect(
+                    "Highlight player(s)",
+                    sorted(df["Player"].unique()),
+                    placeholder="Type or select player names…",
+                    key="ef_player_hl",
+                )
+            with _hl_rst_col:
+                st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+                if st.button("↺  Reset", use_container_width=True, key="ef_player_hl_reset"):
+                    if "ef_player_hl" in st.session_state:
+                        del st.session_state["ef_player_hl"]
+                    st.rerun()
+            _has_hl = bool(_player_hl)
+
             # -- Chart ---------------------------------------------------------
             _hover = df.apply(lambda r: (
                 f"<b>{r['Player']}</b><br>"
@@ -389,6 +406,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                 + f"PPR: {r['PPR']:.3f}  |  {r['Stage_Clean']}"
             ), axis=1)
             _sizes = np.where(df["_efficient"] & _hi_eff, 13, 7).tolist()
+            _base_opacity = 0.12 if _has_hl else 0.78
 
             fig1 = go.Figure()
 
@@ -415,7 +433,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                         x=_grp["WAR_Total"], y=_grp["Salary_M"],
                         mode="markers", name=_stg,
                         marker=dict(
-                            color=_c, size=[_sizes[i] for i in _idx], opacity=0.78,
+                            color=_c, size=[_sizes[i] for i in _idx], opacity=_base_opacity,
                             line=dict(color="#22c55e" if _hi_eff else "rgba(0,0,0,0)", width=1.2),
                         ),
                         text=_hover[_idx], hovertemplate="%{text}<extra></extra>",
@@ -432,7 +450,7 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                     mode="markers", name="Players", showlegend=False,
                     marker=dict(
                         color=_col_vals, colorscale=_cscale, cmid=1.0,
-                        size=_sizes, opacity=0.78,
+                        size=_sizes, opacity=_base_opacity,
                         colorbar=dict(title=_color_by, thickness=12, tickfont=dict(color="#7aa2c0")),
                         showscale=True,
                         line=dict(color="#22c55e" if _hi_eff else "rgba(0,0,0,0)", width=1.2),
@@ -440,6 +458,29 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
                     text=_hover, hovertemplate="%{text}<extra></extra>",
                     customdata=df["Player"].values,
                 ))
+
+            # -- Highlighted player overlay ------------------------------------
+            if _has_hl:
+                _df_hl = df[df["Player"].isin(_player_hl)]
+                if not _df_hl.empty:
+                    for _stg, _grp in _df_hl.groupby("Stage_Clean"):
+                        _c   = _STAGE_COLORS.get(_stg, "#94a3b8")
+                        _idx = _grp.index
+                        fig1.add_trace(go.Scattergl(
+                            x=_grp["WAR_Total"], y=_grp["Salary_M"],
+                            mode="markers+text",
+                            name=_stg, showlegend=False,
+                            text=_grp["Player"],
+                            textposition="top center",
+                            textfont=dict(color="#ffffff", size=9),
+                            marker=dict(
+                                color=_c, size=14, opacity=1.0,
+                                line=dict(color="#ffffff", width=2),
+                            ),
+                            hovertext=_hover[_idx],
+                            hovertemplate="%{hovertext}<extra></extra>",
+                            customdata=_grp["Player"].values,
+                        ))
 
             if _show_reg:
                 fig1.add_trace(go.Scattergl(
