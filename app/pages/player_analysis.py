@@ -161,9 +161,15 @@ div[data-testid='column']:first-of-type .stSlider{
             unsafe_allow_html=True,
         )
         _league_sel = st.selectbox("League", ["Both Leagues", "AL", "NL"], key="ef_league")
+        _year_options = [str(y) for y in _all_years]
+        # Clear stale session state if it has values not in options
+        if "ef_years" in st.session_state:
+            _stale = [v for v in st.session_state["ef_years"] if v not in _year_options]
+            if _stale:
+                del st.session_state["ef_years"]
         _year_sel   = st.multiselect(
-            "Year(s)", [str(y) for y in _all_years],
-            default=[str(y) for y in _all_years], key="ef_years",
+            "Year(s)", _year_options,
+            default=_year_options, key="ef_years",
         )
         _team_sel   = st.multiselect("Team(s)", _all_teams, default=["All Teams"], key="ef_teams")
         _stage_sel  = st.multiselect("Stage", _all_stages, default=_all_stages, key="ef_stages")
