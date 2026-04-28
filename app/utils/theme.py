@@ -778,7 +778,7 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
     )
     _tc1, _tc2 = st.columns([11, 1])
     with _tc2:
-        _light = st.toggle("☀️", key="light_mode", value=False)
+        _light = st.toggle("☀️", key="light_mode", value=True)
     if _light:
         st.markdown("""<style>
         .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
