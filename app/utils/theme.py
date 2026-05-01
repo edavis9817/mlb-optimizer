@@ -787,9 +787,6 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         '<div class="mlb-nav" style="display:flex;align-items:center;padding:0.5rem 0 0;flex-wrap:wrap;">'
         f'<a href="?page=home" target="_self" style="color:{bc};text-decoration:none;font-weight:900;'
         f'font-size:1.1rem;padding:0.3rem 0.8rem 0.3rem 0;white-space:nowrap;">&#9918; MLB Toolbox</a>'
-        f'<span style="color:{_nav_sep};padding:0 0.5rem;line-height:1;">|</span>'
-        f'<span style="font-size:0.65rem;color:{_nav_sub};text-transform:uppercase;'
-        f'letter-spacing:0.06em;margin-right:1.5rem;">Data-driven baseball analysis</span>'
         '<span style="flex:1;"></span>'
         + _a('rankings', '🏆 Rankings')
         + _a('team', '🏟️ Team Analysis')
