@@ -29,6 +29,7 @@ from src.depth_chart import get_depth_chart_dir
 
 # --- utils imports ---
 from utils.constants import (
+    C,
     ELIGIBLE_SLOTS_MAP as _ELIGIBLE_SLOTS_MAP,
     ROSTER_TEMPLATE as _ROSTER_TEMPLATE,
     OPTIONAL_SLOTS as _OPTIONAL_SLOTS,
@@ -420,8 +421,8 @@ def _render_optimizer_page():
                     ))
                 traces.append(go.Scatter(
                     x=bx, y=ew, mode="lines+markers",
-                    line=dict(color="#3b82f6", width=2.5),
-                    marker=dict(color="#3b82f6", size=7),
+                    line=dict(color=C.accent_blue, width=2.5),
+                    marker=dict(color=C.accent_blue, size=7),
                     name="Expected wins",
                     hovertemplate="$%{x:.0f}M -> %{y:.1f} wins<extra></extra>",
                 ))
@@ -780,18 +781,18 @@ def _render_hero_panel(
     risk_lvl    = "Low" if open_slots <= 3 and available_M >= 20 else ("High" if open_slots >= 7 or available_M < 10 else "Mid")
     risk_color  = {"Low": "#22c55e", "Mid": "#f59e0b", "High": "#ef4444"}[risk_lvl]
 
-    def _card(label, val, sub, border="#1e3250", vcolor="#d6e8f8"):
+    def _card(label, val, sub, border=C.border_primary, vcolor=C.text_primary):
         return (
-            f'<div style="background:#18243a;border:1px solid {border};'
+            f'<div style="background:{C.bg_card_surface};border:1px solid {border};'
             f'border-radius:10px;padding:14px 8px;text-align:center;">'
-            f'<div style="font-size:10px;color:#4a687e;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">{label}</div>'
+            f'<div style="font-size:10px;color:{C.text_dim};text-transform:uppercase;letter-spacing:1px;margin-bottom:4px">{label}</div>'
             f'<div style="font-size:26px;font-weight:800;color:{vcolor};line-height:1">{val}</div>'
             f'<div style="font-size:10px;color:#2e4a62;margin-top:4px">{sub}</div></div>'
         )
 
     html = (
         '<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin:16px 0 20px 0;">'
-        + _card("Est. Wins",  f"{est_wins:.0f}",      "2026 Projection",                  "#253d58",  "#93c5fd")
+        + _card("Est. Wins",  f"{est_wins:.0f}",      "2026 Projection",                  C.border_accent,  "#93c5fd")
         + _card("Total WAR",  f"{total_war:.1f}",     "Current Roster")
         + _card("Committed",  f"${committed_M:.0f}M", f"{budget_pct:.0f}% of ${budget_M:.0f}M")
         + _card("Available",  f"${available_M:.0f}M", "To Spend",                          avail_bdr, avail_bdr)
@@ -814,17 +815,19 @@ def _inject_sticky_bar(
     est_wins    = 48 + total_war / 1.5
     avail_color = "#22c55e" if available_M >= 20 else "#f59e0b" if available_M >= 10 else "#ef4444"
 
-    html = f"""<style>
-.mlb-sbar{{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:9998;
-background:rgba(10,15,24,0.97);border-top:1px solid #1e3250;
-padding:5px 24px;display:flex;align-items:center;gap:18px;
-backdrop-filter:blur(6px);box-shadow:0 -2px 16px rgba(0,0,0,.4);}}
-.mlb-sbar .sb-t{{font-size:14px;font-weight:800;color:#3b82f6;white-space:nowrap}}
-.mlb-sbar .sb-i{{display:flex;flex-direction:column;align-items:center;gap:1px}}
-.mlb-sbar .sb-l{{font-size:9px;color:#4a687e;text-transform:uppercase;letter-spacing:.7px}}
-.mlb-sbar .sb-v{{font-size:13px;font-weight:700;color:#d6e8f8}}
-</style>
-<div class="mlb-sbar">
+    css = (
+        "<style>"
+        ".mlb-sbar{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:9998;"
+        "background:rgba(10,15,24,0.97);border-top:1px solid " + C.border_primary + ";"
+        "padding:5px 24px;display:flex;align-items:center;gap:18px;"
+        "backdrop-filter:blur(6px);box-shadow:0 -2px 16px rgba(0,0,0,.4);}"
+        ".mlb-sbar .sb-t{font-size:14px;font-weight:800;color:" + C.accent_blue + ";white-space:nowrap}"
+        ".mlb-sbar .sb-i{display:flex;flex-direction:column;align-items:center;gap:1px}"
+        ".mlb-sbar .sb-l{font-size:9px;color:" + C.text_dim + ";text-transform:uppercase;letter-spacing:.7px}"
+        ".mlb-sbar .sb-v{font-size:13px;font-weight:700;color:" + C.text_primary + "}"
+        "</style>"
+    )
+    html = css + f"""<div class="mlb-sbar">
 <span class="sb-t">{selected_team}</span>
 <div class="sb-i"><span class="sb-l">Budget</span><span class="sb-v">${budget_M}M</span></div>
 <div class="sb-i"><span class="sb-l">Committed</span><span class="sb-v">${committed_M:.0f}M</span></div>
