@@ -2,6 +2,7 @@
 
 import streamlit as st
 
+from utils.constants import C
 from utils.player_utils import (
     fix_player_name as _fix_player_name,
     headshot_url as _headshot_url,
@@ -43,10 +44,10 @@ def render(*_args, **_kwargs):
 
     _lineup = [
         ("rankings", "Rankings", "Efficiency rankings across all 30 teams", "SS", _badge_rank, "#5dc9a5"),
-        ("team", "Team Analysis", "Deep-dive into any team's spending and roster", "CF", "30 teams", "#7a9ebc"),
-        ("league", "Player Analysis", "fWAR vs salary for every player (2021\u20132025)", "RF", "4,000+ players", "#7a9ebc"),
-        ("simulator", "Roster Simulator", "Build custom rosters and optimize efficiency", "DH", "Full pool", "#7a9ebc"),
-        ("glossary", "Methodology", "How every metric is calculated and sourced", "P", "Transparent", "#7a9ebc"),
+        ("team", "Team Analysis", "Deep-dive into any team's spending and roster", "CF", "30 teams", C.text_muted),
+        ("league", "Player Analysis", "fWAR vs salary for every player (2021\u20132025)", "RF", "4,000+ players", C.text_muted),
+        ("simulator", "Roster Simulator", "Build custom rosters and optimize efficiency", "DH", "Full pool", C.text_muted),
+        ("glossary", "Methodology", "How every metric is calculated and sourced", "P", "Transparent", C.text_muted),
     ]
 
     # ------------------------------------------------------------------
@@ -80,7 +81,7 @@ def render(*_args, **_kwargs):
     _lineup_html = ""
     for i, (page, title, desc, pos, badge, badge_clr) in enumerate(_lineup):
         _num_clr = "#c9a94e" if i == 0 else "#4a90d9"
-        _num_bdr = "#c9a94e" if i == 0 else "#253d58"
+        _num_bdr = "#c9a94e" if i == 0 else C.border_accent
         _border = "border-bottom:1px solid #0e1828;" if i < len(_lineup) - 1 else ""
         _lineup_html += (
             f"<a href='?page={page}' target='_self' style='text-decoration:none;color:inherit;"
@@ -93,8 +94,8 @@ def render(*_args, **_kwargs):
             f"font-size:12px;font-weight:700;color:{_num_clr};flex-shrink:0;'>{i+1}</div>"
             f"<div style='flex:1;margin-left:12px;min-width:0;'>"
             f"<div style='font-size:13px;font-weight:500;color:#e8f4ff;'>{title}</div>"
-            f"<div style='font-size:11px;color:#4a687e;margin-top:1px;'>{desc}</div></div>"
-            f"<div style='font-size:11px;color:#4a687e;width:28px;text-align:center;"
+            f"<div style='font-size:11px;color:{C.text_dim};margin-top:1px;'>{desc}</div></div>"
+            f"<div style='font-size:11px;color:{C.text_dim};width:28px;text-align:center;"
             f"flex-shrink:0;margin:0 8px;'>{pos}</div>"
             f"<div style='font-size:11px;color:{badge_clr};white-space:nowrap;"
             f"text-align:right;min-width:60px;flex-shrink:0;'>{badge}</div>"
@@ -112,7 +113,7 @@ def render(*_args, **_kwargs):
     # Build as a single flat string — no indentation that Streamlit could
     # misinterpret as Markdown code blocks.
     _page = (
-        "<div style='background:#080e1a;border-radius:12px;overflow:hidden;position:relative;"
+        "<div style='background:" + C.bg_dark + ";border-radius:12px;overflow:hidden;position:relative;"
         "margin:-0.5rem -1rem 0;padding:0;'>"
         "<div style='position:relative;min-height:380px;'>"
         # Gold vertical tunnel lines
@@ -131,31 +132,31 @@ def render(*_args, **_kwargs):
         + _left_wall + _right_wall +
         # Dark gradient overlays
         "<div style='position:absolute;left:0;top:0;bottom:0;width:90px;"
-        "background:linear-gradient(90deg,#080e1a 0%,transparent 100%);z-index:1;'></div>"
+        "background:linear-gradient(90deg," + C.bg_dark + " 0%,transparent 100%);z-index:1;'></div>"
         "<div style='position:absolute;right:0;top:0;bottom:0;width:90px;"
-        "background:linear-gradient(270deg,#080e1a 0%,transparent 100%);z-index:1;'></div>"
+        "background:linear-gradient(270deg," + C.bg_dark + " 0%,transparent 100%);z-index:1;'></div>"
         # Center title
         "<div style='position:relative;z-index:2;text-align:center;padding:50px 80px 24px;'>"
         "<div style='font-size:11px;color:#c9a94e;letter-spacing:3px;text-transform:uppercase;"
         "animation:gold-pulse 3s ease-in-out infinite;margin-bottom:10px;'>ENTERING THE FIELD</div>"
         "<div style='font-size:28px;font-weight:500;color:#e8f4ff;margin-bottom:6px;'>MLB Toolbox</div>"
-        "<div style='font-size:13px;color:#4a687e;'>Data-driven baseball analysis</div>"
+        "<div style='font-size:13px;color:" + C.text_dim + ";'>Data-driven baseball analysis</div>"
         "</div>"
         # Lineup card
         "<div style='position:relative;z-index:2;padding:0 60px 0;'>"
-        "<div style='max-width:500px;margin:0 auto;background:#0b1422;"
-        "border:1px solid #1e3050;border-radius:8px;overflow:hidden;'>"
+        "<div style='max-width:500px;margin:0 auto;background:" + C.bg_dark + ";"
+        "border:1px solid " + C.border_primary + ";border-radius:8px;overflow:hidden;'>"
         "<div style='display:flex;justify-content:space-between;align-items:center;"
         "padding:10px 16px;border-bottom:1px solid #0e1828;'>"
         "<span style='font-size:13px;font-weight:500;color:#e8f4ff;'>Today's lineup</span>"
-        "<span style='font-size:10px;color:#4a687e;letter-spacing:1px;'>2025 SEASON</span>"
+        "<span style='font-size:10px;color:" + C.text_dim + ";letter-spacing:1px;'>2025 SEASON</span>"
         "</div>"
         + _lineup_html +
         "</div></div>"
         "<div style='height:30px;'></div>"
         "</div>"
         # Tunnel floor
-        "<div style='height:3px;background:linear-gradient(90deg,transparent 5%,#1e3050 50%,transparent 95%);"
+        "<div style='height:3px;background:linear-gradient(90deg,transparent 5%," + C.border_primary + " 50%,transparent 95%);"
         "margin:0 40px;'></div>"
         "<div style='height:1px;background:linear-gradient(90deg,transparent 15%,#2a5a3a44 50%,transparent 85%);"
         "margin:4px 60px 0;opacity:0.6;'></div>"
