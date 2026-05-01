@@ -35,6 +35,7 @@ from utils.data_loading import (
     cached_mlbam_lookup as _DL_cached_mlbam_lookup,
 )
 from utils.constants import (
+    C,
     ROSTER_TEMPLATE as _DL_ROSTER_TEMPLATE,
     ELIGIBLE_SLOTS_MAP as _DL_ELIGIBLE_SLOTS_MAP,
     OPTIONAL_SLOTS as _DL_OPTIONAL_SLOTS,
@@ -452,7 +453,7 @@ def _render_roster_summary(budget_M: float, deps=None):
                         [_PG_COLORS[_PG_ORDER.index(p)] if p in _PG_ORDER else "#60a5fa"
                          for p in scat_df["pos_group"]]
                         if "pos_group" in scat_df.columns
-                        else "#3b82f6"
+                        else C.accent_blue
                     )
                     labels = scat_df["Player"].tolist() if "Player" in scat_df.columns else [""] * len(scat_df)
                     x_max_ref = float(scat_df["Salary_M"].max()) * 1.15
@@ -709,8 +710,8 @@ def _render_player_card(player_name: str, combined_path: str, file_hash: str, de
     # ---- Stats ----
     with stats_col:
         st.markdown(
-            f"<h4 style='margin:0 0 0.3rem;color:#d6e8f8;'>{player_name}</h4>"
-            f"<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.5rem;'>"
+            f"<h4 style='margin:0 0 0.3rem;color:{C.text_primary};'>{player_name}</h4>"
+            f"<div style='font-size:0.85rem;color:{C.text_secondary};margin-bottom:0.5rem;'>"
             f"<b>{pos}</b> &nbsp;|&nbsp; {team} &nbsp;|&nbsp; "
             f"Stage: <b>{stage}</b> &nbsp;|&nbsp; Age: <b>{age_str}</b> &nbsp;|&nbsp; "
             f"{sal_label}: <b>{sal_str}</b> &nbsp;|&nbsp; "
@@ -799,7 +800,7 @@ def _render_player_card(player_name: str, combined_path: str, file_hash: str, de
                 wpm_vals = [w if pd.notna(w) else 0 for w in wpm]
                 fig_wpm = go.Figure(data=[go.Bar(
                     x=yr_strs, y=wpm_vals,
-                    marker_color="#3b82f6", marker_line_width=0,
+                    marker_color=C.accent_blue, marker_line_width=0,
                     text=[f"{v:.2f}" if v != 0 else "" for v in wpm_vals],
                     textposition="outside", textfont=dict(color="#dbeafe", size=9),
                     hovertemplate="%{x}: %{y:.2f} WAR/$M<extra></extra>",
@@ -1080,89 +1081,79 @@ def render(deps: dict | None = None):
     _PG_CHART_COLORS = _DL_PG_CHART_COLORS
 
     # ---- CSS -----------------------------------------------------------------
-    st.markdown("""<style>
-/* == Simulator page ========================================================= */
-.sim-page-hdr{background:linear-gradient(135deg,#18243a 0%,#111927 100%);
-  border:1px solid #1e3250;border-radius:12px;padding:0.65rem 1.1rem;margin-bottom:0.6rem;}
-.sim-page-hdr h2{margin:0;font-size:1.15rem;color:#d6e8f8;font-weight:800;letter-spacing:-0.01em;}
-.sim-page-hdr .sim-sub{font-size:0.68rem;color:#4a687e;margin-top:0.1rem;line-height:1.4;}
-
-/* Chips */
-.sim-chips{display:flex;gap:0.3rem;flex-wrap:wrap;margin-top:0.4rem;}
-.sim-chip{padding:0.15rem 0.55rem;border-radius:999px;font-size:0.67rem;
-  font-weight:700;border:1px solid transparent;letter-spacing:0.01em;}
-.sim-chip.budget{background:#12213a;color:#93c5fd;border-color:#1e3a6a;}
-.sim-chip.remain-ok  {background:#0a1f14;color:#4ade80;border-color:#14532d;}
-.sim-chip.remain-warn{background:#1f1400;color:#fbbf24;border-color:#78450c;}
-.sim-chip.remain-over{background:#1f0a0a;color:#fca5a5;border-color:#7f1d1d;}
-.sim-chip.players{background:#141428;color:#a5b4fc;border-color:#2d2d5a;}
-.sim-chip.slots-ok  {background:#0a1f14;color:#86efac;border-color:#14532d;}
-.sim-chip.slots-open{background:#1f1400;color:#fcd34d;border-color:#78450c;}
-
-/* Section divider */
-.sim-divider{border:none;border-top:1px solid #1e3250;margin:0.5rem 0;}
-
-/* Pool header -- bolder, more prominent */
-.sim-pool-hdr{display:flex;justify-content:space-between;align-items:center;
-  margin-bottom:0.3rem;padding-bottom:0.3rem;border-bottom:2px solid #1e3a5f;}
-.sim-pool-hdr h4{margin:0;color:#d6e8f8;font-size:1.0rem;font-weight:800;letter-spacing:-0.01em;}
-.sim-pool-badge{background:#1e3a5f;color:#93c5fd;padding:0.1rem 0.5rem;
-  border-radius:999px;font-size:0.67rem;font-weight:700;}
-
-/* "Already on roster" tag in pool */
-.sim-added-tag{display:inline-block;background:#14532d;color:#86efac;
-  font-size:0.60rem;font-weight:700;padding:0.05rem 0.4rem;
-  border-radius:999px;margin-left:0.3rem;vertical-align:middle;}
-
-/* Add-to-roster action bar */
-.sim-action-bar{background:#0d1e35;border:1px solid #1e3a5f;border-radius:10px;
-  padding:0.5rem 0.7rem;margin-top:0.4rem;display:flex;align-items:center;gap:0.6rem;}
-.sim-sel-summary{font-size:0.70rem;color:#7a9ebc;flex:1;}
-.sim-sel-summary strong{color:#d6e8f8;}
-
-/* Roster right panel */
-.sim-roster-hdr{display:flex;justify-content:space-between;align-items:center;
-  border-bottom:2px solid #1e3a5f;padding-bottom:0.3rem;margin-bottom:0.45rem;}
-.sim-roster-hdr .sim-rh-title{font-weight:800;color:#d6e8f8;font-size:1.0rem;letter-spacing:-0.01em;}
-.sim-roster-hdr .sim-rh-count{font-size:0.67rem;color:#4a687e;font-weight:600;}
-
-/* KPI grid -- compact */
-.sim-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.25rem;margin-bottom:0.4rem;}
-.sim-kpi-box{background:#0d1e35;border:1px solid #1e3250;border-radius:7px;
-  padding:0.32rem 0.4rem;text-align:center;}
-.sim-kpi-box .kv{font-size:1.0rem;font-weight:800;color:#d6e8f8;line-height:1.1;}
-.sim-kpi-box .kl{font-size:0.57rem;color:#4a687e;margin-top:1px;text-transform:uppercase;letter-spacing:0.04em;}
-
-/* Grade strip */
-.sim-grade-strip{display:flex;gap:0.25rem;margin:0.3rem 0 0.5rem;}
-.sim-grade-box{flex:1;text-align:center;padding:0.28rem 0.2rem;
-  background:#0d1e35;border:1px solid #1e3250;border-radius:7px;}
-.sim-grade-box .gv{font-size:1.15rem;font-weight:800;}
-.sim-grade-box .gl{font-size:0.55rem;color:#4a687e;margin-top:1px;text-transform:uppercase;letter-spacing:0.03em;}
-.sim-grade-box .gs{font-size:0.52rem;color:#2e4a62;}
-
-/* CBT planning slider block */
-.sim-cbt-block{background:#0d1e35;border:1px solid #1e3a5f;border-radius:9px;
-  padding:0.55rem 0.7rem;margin:0.5rem 0;}
-.sim-cbt-block .cb-title{font-size:0.68rem;font-weight:700;color:#7a9ebc;
-  text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem;}
-.sim-cbt-row{display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;margin-top:0.2rem;}
-.sim-cbt-pill{padding:0.15rem 0.55rem;border-radius:999px;font-size:0.67rem;font-weight:700;border:1px solid transparent;}
-.sim-cbt-pill.ok  {background:#0a1f14;color:#4ade80;border-color:#14532d;}
-.sim-cbt-pill.warn{background:#1f1400;color:#fbbf24;border-color:#78450c;}
-.sim-cbt-pill.over{background:#1f0a0a;color:#fca5a5;border-color:#7f1d1d;}
-
-/* Sticky bar */
-.mlb-sbar{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:9998;
-  background:rgba(8,13,22,0.98);border-top:1px solid #1e3250;
-  padding:0.28rem 1.5rem;display:flex;align-items:center;gap:1.6rem;
-  font-size:0.72rem;color:#7a9ebc;}
-.mlb-sbar .sb-team{font-weight:800;color:#d6e8f8;font-size:0.80rem;}
-.mlb-sbar .sb-stat{display:flex;flex-direction:column;align-items:center;}
-.mlb-sbar .sb-val{font-weight:700;font-size:0.84rem;color:#93c5fd;}
-.mlb-sbar .sb-lbl{font-size:0.57rem;color:#4a687e;}
-.mlb-sbar-pad{height:44px;}
-</style>""", unsafe_allow_html=True)
+    st.markdown("<style>"
+        "/* == Simulator page ========================================================= */"
+        ".sim-page-hdr{background:linear-gradient(135deg," + C.bg_card_surface + " 0%," + C.bg_primary + " 100%);"
+        "  border:1px solid " + C.border_primary + ";border-radius:12px;padding:0.65rem 1.1rem;margin-bottom:0.6rem;}"
+        ".sim-page-hdr h2{margin:0;font-size:1.15rem;color:" + C.text_primary + ";font-weight:800;letter-spacing:-0.01em;}"
+        ".sim-page-hdr .sim-sub{font-size:0.68rem;color:" + C.text_dim + ";margin-top:0.1rem;line-height:1.4;}"
+        "/* Chips */"
+        ".sim-chips{display:flex;gap:0.3rem;flex-wrap:wrap;margin-top:0.4rem;}"
+        ".sim-chip{padding:0.15rem 0.55rem;border-radius:999px;font-size:0.67rem;"
+        "  font-weight:700;border:1px solid transparent;letter-spacing:0.01em;}"
+        ".sim-chip.budget{background:#12213a;color:#93c5fd;border-color:#1e3a6a;}"
+        ".sim-chip.remain-ok  {background:#0a1f14;color:#4ade80;border-color:#14532d;}"
+        ".sim-chip.remain-warn{background:#1f1400;color:#fbbf24;border-color:#78450c;}"
+        ".sim-chip.remain-over{background:#1f0a0a;color:#fca5a5;border-color:#7f1d1d;}"
+        ".sim-chip.players{background:#141428;color:#a5b4fc;border-color:#2d2d5a;}"
+        ".sim-chip.slots-ok  {background:#0a1f14;color:#86efac;border-color:#14532d;}"
+        ".sim-chip.slots-open{background:#1f1400;color:#fcd34d;border-color:#78450c;}"
+        "/* Section divider */"
+        ".sim-divider{border:none;border-top:1px solid " + C.border_primary + ";margin:0.5rem 0;}"
+        "/* Pool header -- bolder, more prominent */"
+        ".sim-pool-hdr{display:flex;justify-content:space-between;align-items:center;"
+        "  margin-bottom:0.3rem;padding-bottom:0.3rem;border-bottom:2px solid #1e3a5f;}"
+        ".sim-pool-hdr h4{margin:0;color:" + C.text_primary + ";font-size:1.0rem;font-weight:800;letter-spacing:-0.01em;}"
+        ".sim-pool-badge{background:#1e3a5f;color:#93c5fd;padding:0.1rem 0.5rem;"
+        "  border-radius:999px;font-size:0.67rem;font-weight:700;}"
+        "/* \"Already on roster\" tag in pool */"
+        ".sim-added-tag{display:inline-block;background:#14532d;color:#86efac;"
+        "  font-size:0.60rem;font-weight:700;padding:0.05rem 0.4rem;"
+        "  border-radius:999px;margin-left:0.3rem;vertical-align:middle;}"
+        "/* Add-to-roster action bar */"
+        ".sim-action-bar{background:#0d1e35;border:1px solid #1e3a5f;border-radius:10px;"
+        "  padding:0.5rem 0.7rem;margin-top:0.4rem;display:flex;align-items:center;gap:0.6rem;}"
+        ".sim-sel-summary{font-size:0.70rem;color:" + C.text_muted + ";flex:1;}"
+        ".sim-sel-summary strong{color:" + C.text_primary + ";}"
+        "/* Roster right panel */"
+        ".sim-roster-hdr{display:flex;justify-content:space-between;align-items:center;"
+        "  border-bottom:2px solid #1e3a5f;padding-bottom:0.3rem;margin-bottom:0.45rem;}"
+        ".sim-roster-hdr .sim-rh-title{font-weight:800;color:" + C.text_primary + ";font-size:1.0rem;letter-spacing:-0.01em;}"
+        ".sim-roster-hdr .sim-rh-count{font-size:0.67rem;color:" + C.text_dim + ";font-weight:600;}"
+        "/* KPI grid -- compact */"
+        ".sim-kpi-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.25rem;margin-bottom:0.4rem;}"
+        ".sim-kpi-box{background:#0d1e35;border:1px solid " + C.border_primary + ";border-radius:7px;"
+        "  padding:0.32rem 0.4rem;text-align:center;}"
+        ".sim-kpi-box .kv{font-size:1.0rem;font-weight:800;color:" + C.text_primary + ";line-height:1.1;}"
+        ".sim-kpi-box .kl{font-size:0.57rem;color:" + C.text_dim + ";margin-top:1px;text-transform:uppercase;letter-spacing:0.04em;}"
+        "/* Grade strip */"
+        ".sim-grade-strip{display:flex;gap:0.25rem;margin:0.3rem 0 0.5rem;}"
+        ".sim-grade-box{flex:1;text-align:center;padding:0.28rem 0.2rem;"
+        "  background:#0d1e35;border:1px solid " + C.border_primary + ";border-radius:7px;}"
+        ".sim-grade-box .gv{font-size:1.15rem;font-weight:800;}"
+        ".sim-grade-box .gl{font-size:0.55rem;color:" + C.text_dim + ";margin-top:1px;text-transform:uppercase;letter-spacing:0.03em;}"
+        ".sim-grade-box .gs{font-size:0.52rem;color:#2e4a62;}"
+        "/* CBT planning slider block */"
+        ".sim-cbt-block{background:#0d1e35;border:1px solid #1e3a5f;border-radius:9px;"
+        "  padding:0.55rem 0.7rem;margin:0.5rem 0;}"
+        ".sim-cbt-block .cb-title{font-size:0.68rem;font-weight:700;color:" + C.text_muted + ";"
+        "  text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.3rem;}"
+        ".sim-cbt-row{display:flex;gap:0.6rem;align-items:center;flex-wrap:wrap;margin-top:0.2rem;}"
+        ".sim-cbt-pill{padding:0.15rem 0.55rem;border-radius:999px;font-size:0.67rem;font-weight:700;border:1px solid transparent;}"
+        ".sim-cbt-pill.ok  {background:#0a1f14;color:#4ade80;border-color:#14532d;}"
+        ".sim-cbt-pill.warn{background:#1f1400;color:#fbbf24;border-color:#78450c;}"
+        ".sim-cbt-pill.over{background:#1f0a0a;color:#fca5a5;border-color:#7f1d1d;}"
+        "/* Sticky bar */"
+        ".mlb-sbar{position:fixed;bottom:0;top:auto;left:0;right:0;z-index:9998;"
+        "  background:rgba(8,13,22,0.98);border-top:1px solid " + C.border_primary + ";"
+        "  padding:0.28rem 1.5rem;display:flex;align-items:center;gap:1.6rem;"
+        "  font-size:0.72rem;color:" + C.text_muted + ";}"
+        ".mlb-sbar .sb-team{font-weight:800;color:" + C.text_primary + ";font-size:0.80rem;}"
+        ".mlb-sbar .sb-stat{display:flex;flex-direction:column;align-items:center;}"
+        ".mlb-sbar .sb-val{font-weight:700;font-size:0.84rem;color:#93c5fd;}"
+        ".mlb-sbar .sb-lbl{font-size:0.57rem;color:" + C.text_dim + ";}"
+        ".mlb-sbar-pad{height:44px;}"
+        "</style>", unsafe_allow_html=True)
 
     # ---- Player card sub-page routing ----------------------------------------
     if st.session_state.get("view_player"):
@@ -1674,10 +1665,10 @@ def render(deps: dict | None = None):
                 _after_color = "#4ade80" if _budget_after >= 10 else ("#fbbf24" if _budget_after >= 0 else "#fca5a5")
                 st.markdown(
                     f"<div style='padding:0.3rem 0.5rem;background:#0d1e35;border:1px solid #1e3a5f;"
-                    f"border-radius:8px;font-size:0.75rem;color:#93b8d8;line-height:1.5;'>"
-                    f"<strong style='color:#d6e8f8;'>{n_new}</strong> new \u00b7 "
-                    f"WAR <strong style='color:#d6e8f8;'>+{_sel_war:.1f}</strong> \u00b7 "
-                    f"Cost <strong style='color:#d6e8f8;'>${_sel_cost:.1f}M</strong> \u00b7 "
+                    f"border-radius:8px;font-size:0.75rem;color:{C.text_secondary};line-height:1.5;'>"
+                    f"<strong style='color:{C.text_primary};'>{n_new}</strong> new \u00b7 "
+                    f"WAR <strong style='color:{C.text_primary};'>+{_sel_war:.1f}</strong> \u00b7 "
+                    f"Cost <strong style='color:{C.text_primary};'>${_sel_cost:.1f}M</strong> \u00b7 "
                     f"Budget after <strong style='color:{_after_color};'>${_budget_after:+.1f}M</strong>"
                     f"</div>",
                     unsafe_allow_html=True,
@@ -1731,7 +1722,7 @@ def render(deps: dict | None = None):
                 f"  <div class='sim-kpi-box'><div class='kv' style='color:{_rem_color}'>${_r_remaining:+.0f}M</div><div class='kl'>Remaining</div></div>"
                 f"  <div class='sim-kpi-box'><div class='kv'>~{_r_est_wins:.0f}W</div><div class='kl'>Est. Wins</div></div>"
                 f"  <div class='sim-kpi-box'><div class='kv'>${_r_dpw:.1f}M</div><div class='kl'>$/WAR</div>"
-                f"  <div style='font-size:0.58rem;color:#4a687e;margin-top:2px;'>${_r_total_cost / max(_r_total_war + 47.7, 1):.2f}M $/Win</div></div>"
+                f"  <div style='font-size:0.58rem;color:{C.text_dim};margin-top:2px;'>${_r_total_cost / max(_r_total_war + 47.7, 1):.2f}M $/Win</div></div>"
                 f"  <div class='sim-kpi-box'><div class='kv'>{_r_n_fa}/{_r_n_arb}/{_r_n_pre}</div><div class='kl'>FA/Arb/Pre</div></div>"
                 f"</div>",
                 unsafe_allow_html=True,
@@ -1848,12 +1839,12 @@ def render(deps: dict | None = None):
                     f"<div class='sim-cbt-block'>"
                     f"  <div class='cb-title'>\U0001f9fe CBT Threshold Planner</div>"
                     f"  <div class='sim-cbt-row'>"
-                    f"    <span style='font-size:0.75rem;color:#93b8d8;'>"
-                    f"      Target: <strong style='color:#d6e8f8;'>${_eff_thresh:.0f}M</strong>"
+                    f"    <span style='font-size:0.75rem;color:{C.text_secondary};'>"
+                    f"      Target: <strong style='color:{C.text_primary};'>${_eff_thresh:.0f}M</strong>"
                     f"    </span>"
                     f"    <span class='sim-cbt-pill {_pill_cls2}'>{_rem_vs_txt}</span>"
                     f"  </div>"
-                    f"  <div style='font-size:0.63rem;color:#4a687e;margin-top:0.3rem;'>"
+                    f"  <div style='font-size:0.63rem;color:{C.text_dim};margin-top:0.3rem;'>"
                     f"    <span style='color:{_cbt_fg2};font-weight:700;'>{_cbt_lbl2}</span>"
                     f"    {(' — ' + _note_txt) if _note_txt else ''}"
                     f"  </div>"
@@ -1890,7 +1881,7 @@ def render(deps: dict | None = None):
                     if not _sc_df.empty:
                         _dc2 = ([_PG_COLORS[_PG_ORDER.index(p)] if p in _PG_ORDER else "#60a5fa"
                                  for p in _sc_df["pos_group"]]
-                                if "pos_group" in _sc_df.columns else "#3b82f6")
+                                if "pos_group" in _sc_df.columns else C.accent_blue)
                         _xlim = float(_sc_df["Salary_M"].max()) * 1.15
                         _xr   = np.linspace(0, _xlim, 60)
                         _yr   = _xr * _r_wpm
@@ -1955,7 +1946,7 @@ def render(deps: dict | None = None):
                     _fut_df = pd.DataFrame(_fut_rows)
 
                     # Stacked bar chart by stage
-                    _stg_colors = {"Pre-Arb": "#22c55e", "Arb": "#f59e0b", "FA": "#3b82f6"}
+                    _stg_colors = {"Pre-Arb": "#22c55e", "Arb": "#f59e0b", "FA": C.accent_blue}
                     _years_lbl = ["2026", "2027", "2028"]
                     _fig_fut = go.Figure()
                     for stg, clr in _stg_colors.items():
@@ -1973,9 +1964,9 @@ def render(deps: dict | None = None):
                     _fig_fut.add_hline(y=244, line_dash="dash", line_color="#f59e0b", opacity=0.5,
                                        annotation_text="CBT $244M", annotation_position="top right",
                                        annotation_font_color="#f59e0b")
-                    _fig_fut.add_hline(y=float(budget_M), line_dash="dot", line_color="#3b82f6", opacity=0.4,
+                    _fig_fut.add_hline(y=float(budget_M), line_dash="dot", line_color=C.accent_blue, opacity=0.4,
                                        annotation_text=f"Budget ${budget_M}M", annotation_position="bottom right",
-                                       annotation_font_color="#3b82f6")
+                                       annotation_font_color=C.accent_blue)
                     _fig_fut.update_layout(**_pt(
                         title="Committed Payroll by Stage (2026\u20132028)",
                         yaxis=dict(title="Total $M"), height=340,
