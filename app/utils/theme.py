@@ -4,34 +4,60 @@ import streamlit as st
 
 
 def plotly_theme(**overrides) -> dict:
-    """Return a base Plotly layout dict — dark slate + deep blue theme.
+    """Return a base Plotly layout dict — adapts to light/dark mode.
 
     Pass keyword overrides to customise per-chart (e.g. title, height, showlegend).
     Nested dict overrides are shallow-merged with the base dicts.
     """
-    base: dict = dict(
-        paper_bgcolor="#141d2e",   # match main bg
-        plot_bgcolor="#1c2a42",    # slightly lifted card surface
-        font=dict(color="#7a9ebc", size=11),
-        title=dict(font=dict(color="#d6e8f8", size=13), x=0.02),
-        xaxis=dict(
-            gridcolor="#1e3250", linecolor="#1e3250",
-            zerolinecolor="#253d58", zerolinewidth=1,
-            tickfont=dict(color="#7a9ebc"), title_font=dict(color="#a8c8e8"),
-        ),
-        yaxis=dict(
-            gridcolor="#1e3250", linecolor="#1e3250",
-            zerolinecolor="#253d58", zerolinewidth=1,
-            tickfont=dict(color="#7a9ebc"), title_font=dict(color="#a8c8e8"),
-        ),
-        legend=dict(
-            bgcolor="#1c2a42", bordercolor="#253d58", borderwidth=1,
-            font=dict(color="#7a9ebc"),
-        ),
-        margin=dict(l=50, r=20, t=45, b=50),
-        showlegend=False,
-        transition=dict(duration=400, easing="cubic-in-out"),
-    )
+    _light = st.session_state.get("light_mode", True)
+    if _light:
+        base: dict = dict(
+            paper_bgcolor="#f0f2f6",
+            plot_bgcolor="#ffffff",
+            font=dict(color="#4a5568", size=11),
+            title=dict(font=dict(color="#1a1a2e", size=13), x=0.02),
+            xaxis=dict(
+                gridcolor="#e2e8f0", linecolor="#e2e8f0",
+                zerolinecolor="#cbd5e1", zerolinewidth=1,
+                tickfont=dict(color="#4a5568"), title_font=dict(color="#2d3748"),
+            ),
+            yaxis=dict(
+                gridcolor="#e2e8f0", linecolor="#e2e8f0",
+                zerolinecolor="#cbd5e1", zerolinewidth=1,
+                tickfont=dict(color="#4a5568"), title_font=dict(color="#2d3748"),
+            ),
+            legend=dict(
+                bgcolor="#ffffff", bordercolor="#e2e8f0", borderwidth=1,
+                font=dict(color="#4a5568"),
+            ),
+            margin=dict(l=50, r=20, t=45, b=50),
+            showlegend=False,
+            transition=dict(duration=400, easing="cubic-in-out"),
+        )
+    else:
+        base: dict = dict(
+            paper_bgcolor="#141d2e",
+            plot_bgcolor="#1c2a42",
+            font=dict(color="#7a9ebc", size=11),
+            title=dict(font=dict(color="#d6e8f8", size=13), x=0.02),
+            xaxis=dict(
+                gridcolor="#1e3250", linecolor="#1e3250",
+                zerolinecolor="#253d58", zerolinewidth=1,
+                tickfont=dict(color="#7a9ebc"), title_font=dict(color="#a8c8e8"),
+            ),
+            yaxis=dict(
+                gridcolor="#1e3250", linecolor="#1e3250",
+                zerolinecolor="#253d58", zerolinewidth=1,
+                tickfont=dict(color="#7a9ebc"), title_font=dict(color="#a8c8e8"),
+            ),
+            legend=dict(
+                bgcolor="#1c2a42", bordercolor="#253d58", borderwidth=1,
+                font=dict(color="#7a9ebc"),
+            ),
+            margin=dict(l=50, r=20, t=45, b=50),
+            showlegend=False,
+            transition=dict(duration=400, easing="cubic-in-out"),
+        )
     for k, v in overrides.items():
         if isinstance(v, dict) and isinstance(base.get(k), dict):
             base[k] = {**base[k], **v}
@@ -90,21 +116,29 @@ def render_nav_bar():
     """
     page = st.session_state.get("page", "home")
 
+    # ── Read light-mode preference (default True = light) before injecting CSS
+    _light = st.session_state.get("light_mode", True)
+
+    _accent = "#2b5cc8" if _light else "#3b82f6"
+    _nav_inactive = "#4a5568" if _light else "#4a687e"
+    _nav_sep = "#cbd5e1" if _light else "#253d58"
+    _nav_sub = "#718096" if _light else "#2e4a62"
+
     def _a(p: str, label: str) -> str:
         """Return a single-line <a> tag for a nav item."""
         if p == page:
             return (
-                f'<a href="?page={p}" target="_self" style="color:#3b82f6;text-decoration:none;'
+                f'<a href="?page={p}" target="_self" style="color:{_accent};text-decoration:none;'
                 f'font-weight:700;font-size:0.9rem;padding:0.4rem 0.9rem;'
-                f'border-bottom:2px solid #3b6fd4;white-space:nowrap;">{label}</a>'
+                f'border-bottom:2px solid {_accent};white-space:nowrap;">{label}</a>'
             )
         return (
-            f'<a href="?page={p}" target="_self" style="color:#4a687e;text-decoration:none;'
+            f'<a href="?page={p}" target="_self" style="color:{_nav_inactive};text-decoration:none;'
             f'font-weight:600;font-size:0.9rem;padding:0.4rem 0.9rem;'
             f'border-bottom:2px solid transparent;white-space:nowrap;">{label}</a>'
         )
 
-    bc = "#3b82f6"
+    bc = _accent
 
     # ── Call 1: comprehensive global theme CSS ────────────────────────────────
     st.markdown("""<style>
@@ -753,9 +787,9 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         '<div class="mlb-nav" style="display:flex;align-items:center;padding:0.5rem 0 0;flex-wrap:wrap;">'
         f'<a href="?page=home" target="_self" style="color:{bc};text-decoration:none;font-weight:900;'
         f'font-size:1.1rem;padding:0.3rem 0.8rem 0.3rem 0;white-space:nowrap;">&#9918; MLB Toolbox</a>'
-        '<span style="color:#253d58;padding:0 0.5rem;line-height:1;">|</span>'
-        '<span style="font-size:0.65rem;color:#2e4a62;text-transform:uppercase;'
-        'letter-spacing:0.06em;margin-right:1.5rem;">Data-driven baseball analysis</span>'
+        f'<span style="color:{_nav_sep};padding:0 0.5rem;line-height:1;">|</span>'
+        f'<span style="font-size:0.65rem;color:{_nav_sub};text-transform:uppercase;'
+        f'letter-spacing:0.06em;margin-right:1.5rem;">Data-driven baseball analysis</span>'
         '<span style="flex:1;"></span>'
         + _a('rankings', '🏆 Rankings')
         + _a('team', '🏟️ Team Analysis')
@@ -764,7 +798,7 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         + _a('glossary', '📖 Methodology')
         + _a('feedback', '💬 Feedback')
         + '</div>'
-        + '<hr style="margin:0.4rem 0 0.6rem;border:none;border-top:1px solid #1e3250;">'
+        + f'<hr style="margin:0.4rem 0 0.6rem;border:none;border-top:1px solid {"#e2e8f0" if _light else "#1e3250"};">'
     )
     st.markdown(nav, unsafe_allow_html=True)
 
@@ -781,26 +815,138 @@ button[data-testid="stMultiSelectClearButton"] { display: none !important; }
         _light = st.toggle("☀️", key="light_mode", value=True)
     if _light:
         st.markdown("""<style>
+        /* ══════════════════════════════════════════════════════════════
+           LIGHT THEME — overrides all dark color rules
+           ══════════════════════════════════════════════════════════════ */
+
+        /* ── Backgrounds ─────────────────────────────────────────── */
         .stApp, [data-testid="stAppViewContainer"], [data-testid="stHeader"],
         [data-testid="stBottom"], [data-testid="stMain"], [data-testid="stMainBlockContainer"] {
             background: #f0f2f6 !important; }
         [data-testid="stSidebar"], [data-testid="stSidebarContent"] {
             background: #e8ebf0 !important; }
+
+        /* ── Typography ──────────────────────────────────────────── */
         h1,h2,h3,h4,h5,h6 { color: #1a1a2e !important; }
         [data-testid="stMarkdownContainer"] p { color: #2d3748 !important; }
         [data-testid="stCaptionContainer"] p, [data-testid="stCaption"] { color: #4a5568 !important; }
+        .stApp p, .stApp span, .stApp label, .stApp div { color: inherit; }
+
+        /* ── Scrollbar ───────────────────────────────────────────── */
+        ::-webkit-scrollbar-track { background: #f0f2f6 !important; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1 !important; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8 !important; }
+
+        /* ── Cards / Expanders ────────────────────────────────────── */
         [data-testid="stExpander"] { background: #ffffff !important; border-color: #e2e8f0 !important; }
         [data-testid="stExpander"] summary { color: #2d3748 !important; }
-        [data-testid="stMetric"] { background: #ffffff; border-color: #e2e8f0; }
+        [data-testid="stExpander"] summary:hover { background: #f8fafc !important; }
+
+        /* ── Metrics ─────────────────────────────────────────────── */
+        [data-testid="stMetric"] { background: #ffffff !important; border-color: #e2e8f0 !important; }
         [data-testid="stMetricLabel"] { color: #4a5568 !important; }
         [data-testid="stMetricValue"] { color: #1a1a2e !important; }
+
+        /* ── Tabs ────────────────────────────────────────────────── */
+        .stTabs [data-baseweb="tab-list"] { border-bottom-color: #e2e8f0 !important; }
         .stTabs [data-baseweb="tab"] { color: #4a5568 !important; }
         .stTabs [aria-selected="true"] { color: #2b5cc8 !important; border-bottom-color: #2b5cc8 !important; }
-        [data-testid="stDataFrame"] .dvn-scroller thead th { background: #edf2f7 !important; color: #2d3748 !important; }
+        .stTabs [data-baseweb="tab"]:hover:not([aria-selected="true"]) {
+            color: #1a1a2e !important; background: rgba(0,0,0,0.04) !important; }
+
+        /* ── Buttons ─────────────────────────────────────────────── */
+        [data-testid="stButton"] > button[kind="primary"] {
+            background: #2b5cc8 !important; border-color: #2b5cc8 !important; color: #ffffff !important; }
+        [data-testid="stButton"] > button[kind="primary"]:hover {
+            background: #3b6fd4 !important; border-color: #3b6fd4 !important; }
+        [data-testid="stButton"] > button[kind="secondary"] {
+            background: transparent !important; border-color: #cbd5e1 !important; color: #4a5568 !important; }
+        [data-testid="stButton"] > button[kind="secondary"]:hover {
+            background: #f1f5f9 !important; border-color: #2b5cc8 !important; color: #1a1a2e !important; }
+        [data-testid="stButton"] > button:disabled {
+            background: #f1f5f9 !important; border-color: #e2e8f0 !important; color: #a0aec0 !important; }
+        [data-testid="stDownloadButton"] > button {
+            background: transparent !important; border-color: #cbd5e1 !important; color: #4a5568 !important; }
+        [data-testid="stDownloadButton"] > button:hover {
+            background: #f1f5f9 !important; border-color: #2b5cc8 !important; color: #1a1a2e !important; }
+
+        /* ── Inputs ──────────────────────────────────────────────── */
+        [data-baseweb="input"] > div,
+        [data-baseweb="base-input"] > input,
+        [data-baseweb="textarea"] > textarea {
+            background: #ffffff !important; border-color: #cbd5e1 !important; color: #2d3748 !important; }
+        [data-baseweb="input"]:focus-within > div,
+        [data-baseweb="base-input"]:focus-within > input {
+            border-color: #2b5cc8 !important; }
+        [data-baseweb="select"] > div {
+            background: #ffffff !important; border-color: #cbd5e1 !important; color: #2d3748 !important; }
+        [data-baseweb="select"] > div:hover { border-color: #2b5cc8 !important; }
+        [data-baseweb="popover"] [role="listbox"] {
+            background: #ffffff !important; border-color: #e2e8f0 !important; }
+        [data-baseweb="option"]:hover { background: #f1f5f9 !important; }
+        [data-baseweb="option"][aria-selected="true"] { background: #dbeafe !important; }
+        [data-testid="stNumberInput"] input {
+            background: #ffffff !important; border-color: #cbd5e1 !important; color: #2d3748 !important; }
+
+        /* ── Sliders ─────────────────────────────────────────────── */
+        [data-testid="stSlider"] [data-testid="stSliderTrack"] > div:first-child {
+            background: #e2e8f0 !important; }
+
+        /* ── Multiselect chips ───────────────────────────────────── */
+        [data-baseweb="tag"] { background-color: #dbeafe !important; border-color: #93c5fd !important; }
+        [data-baseweb="tag"] span { color: #1e40af !important; }
+
+        /* ── Checkboxes ──────────────────────────────────────────── */
+        [data-testid="stCheckbox"] label { color: #4a5568 !important; }
+
+        /* ── Alert boxes ─────────────────────────────────────────── */
+        [data-testid="stInfo"] {
+            background: rgba(59,130,246,0.08) !important; border-left-color: #2b5cc8 !important; color: #1e40af !important; }
+        [data-testid="stSuccess"] {
+            background: rgba(22,163,74,0.08) !important; border-left-color: #16a34a !important; color: #15803d !important; }
+        [data-testid="stWarning"] {
+            background: rgba(217,119,6,0.08) !important; border-left-color: #d97706 !important; color: #92400e !important; }
+        [data-testid="stError"] {
+            background: rgba(220,38,38,0.08) !important; border-left-color: #dc2626 !important; color: #991b1b !important; }
+
+        /* ── Dataframe / table ───────────────────────────────────── */
         [data-testid="stDataFrame"], [data-testid="stDataEditor"] { border-color: #e2e8f0 !important; }
+        [data-testid="stDataFrame"] .dvn-scroller thead th,
+        [data-testid="stDataEditor"] .dvn-scroller thead th {
+            background: #edf2f7 !important; color: #2d3748 !important; border-bottom-color: #e2e8f0 !important; }
+        [data-testid="stDataFrame"] .dvn-scroller tbody tr:nth-child(even) td {
+            background: rgba(0,0,0,0.02) !important; }
+        [data-testid="stDataFrame"] .dvn-scroller tbody tr:hover td,
+        [data-testid="stDataEditor"] .dvn-scroller tbody tr:hover td {
+            background: rgba(0,0,0,0.04) !important; }
+
+        /* ── Loading state ───────────────────────────────────────── */
+        .loading-title { color: #1a1a2e !important; }
+        .loading-sub { color: #4a5568 !important; }
+        .loading-bar { background: #e2e8f0 !important; }
+        .loading-bar::after { background: #2b5cc8 !important; }
+        [data-testid="stSpinner"] > div { color: #2b5cc8 !important; }
+
+        /* ── Plotly chart wrapper ─────────────────────────────────── */
+        [data-testid="stImage"] { border-color: #e2e8f0 !important; background: #ffffff !important; }
+        [data-testid="stPlotlyChart"] { border-color: #e2e8f0 !important; }
+
+        /* ── Nav bar ─────────────────────────────────────────────── */
+        .mlb-nav a { color: #2d3748 !important; }
+
+        /* ── Rankings answer cards ───────────────────────────────── */
         .rk-answer { background: #ffffff !important; border-color: #e2e8f0 !important; }
         .rk-answer .rk-team { color: #1a1a2e !important; }
         .rk-answer .rk-q { color: #4a5568 !important; }
         .rk-answer .rk-val { color: #4a5568 !important; }
-        .mlb-nav a { color: #2d3748 !important; }
+
+        /* ── Card hover shadow (lighter for light mode) ──────────── */
+        [data-testid="stExpander"]:hover,
+        [data-testid="stMetric"]:hover,
+        .rk-answer:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08) !important; }
+
+        /* ── Mobile nav fade gradient ────────────────────────────── */
+        @media (max-width: 768px) {
+            .mlb-nav::after { background: linear-gradient(to right, transparent, #f0f2f6 85%) !important; }
+        }
         </style>""", unsafe_allow_html=True)

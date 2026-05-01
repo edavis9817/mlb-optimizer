@@ -15,6 +15,7 @@ from utils.team_utils import cbt_info as _cbt_info, ordinal as _ordinal
 from utils.theme import plotly_theme as _pt
 from utils.constants import (
     ABBR_TO_FULL as _ABBR_TO_FULL,
+    C,
     TEAM_CITIES as _TEAM_CITIES,
     TEAM_COLORS as _TEAM_COLORS,
 )
@@ -74,13 +75,13 @@ def render(*_args, **_kwargs):
 
     def _render_league_grid(league_name, divs):
         st.markdown(
-            f"<div style='font-size:0.82rem;font-weight:700;color:#d6e8f8;text-align:center;"
+            f"<div style='font-size:0.82rem;font-weight:700;color:{C.text_primary};text-align:center;"
             f"margin-bottom:0.3rem;letter-spacing:0.1em;'>{league_name}</div>",
             unsafe_allow_html=True,
         )
         for div_name, teams in divs:
             st.markdown(
-                f"<div style='font-size:0.62rem;color:#d6e8f8;font-weight:600;"
+                f"<div style='font-size:0.62rem;color:{C.text_primary};font-weight:600;"
                 f"margin:0.2rem 0 0.1rem;'>{div_name}</div>",
                 unsafe_allow_html=True,
             )
@@ -89,9 +90,9 @@ def render(*_args, **_kwargs):
             for tm in teams:
                 _url = team_logo_url(tm)
                 is_active = tm == sel_team
-                _bdr = "2px solid #3b82f6" if is_active else "1px solid transparent"
-                _bg = "rgba(59,130,246,0.1)" if is_active else "transparent"
-                _shadow = "box-shadow:0 0 12px #3b82f644;" if is_active else ""
+                _bdr = f"2px solid {C.accent_blue}" if is_active else "1px solid transparent"
+                _bg = f"rgba(59,130,246,0.1)" if is_active else "transparent"
+                _shadow = f"box-shadow:0 0 12px {C.accent_blue}44;" if is_active else ""
                 _name = _ABBR_TO_FULL.get(tm, tm)
                 _cards += (
                     f"<a href='?page=team&sel_team={tm}' target='_self' style='text-decoration:none;'>"
@@ -120,7 +121,7 @@ def render(*_args, **_kwargs):
     # If no team selected yet, show prompt and stop
     if not sel_team:
         st.markdown(
-            "<div style='text-align:center;padding:3rem 0;color:#7a9ebc;font-size:1rem;'>"
+            f"<div style='text-align:center;padding:3rem 0;color:{C.text_muted};font-size:1rem;'>"
             "Select a team above to view their analysis.</div>",
             unsafe_allow_html=True,
         )
@@ -204,7 +205,7 @@ def render(*_args, **_kwargs):
         _team_div = str(all_eff_2025.loc[all_eff_2025["Team"] == sel_team, "division"].values[0])
 
     # KPI box style — consistent background, white border, fixed height
-    _kpi = ("background:#0d1b2a;border:1px solid #ffffff33;border-radius:8px;"
+    _kpi = (f"background:{C.bg_dark};border:1px solid #ffffff33;border-radius:8px;"
             "padding:10px 8px;text-align:center;min-width:100px;min-height:88px;")
 
     # Compute league avg fWAR and $/fWAR for context
@@ -250,45 +251,45 @@ def render(*_args, **_kwargs):
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2025 RECORD</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_wins}\u2013{162 - _wins}</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>"
         + (_team_div if _team_div else "") +
         f"</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2026 RECORD</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_record_26}</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>"
         + (f"{_ordinal(int(_div_rank))} {_team_div}" if _div_rank != "?" else "")
         + f"</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>2026 PAYROLL</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>${_payroll_m:.0f}M</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>#{_pay_rank}/30</div></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>#{_pay_rank}/30</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>LUX TAX EST.</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>~${_lux_tax_est}M</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>CBT: $244M</div></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>CBT: $244M</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>TEAM fWAR</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_war:.1f}</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>#{_war_rank}/30 \u00b7 avg {_lg_avg_war:.0f}</div></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>#{_war_rank}/30 \u00b7 avg {_lg_avg_war:.0f}</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>{'SURPLUS VALUE' if _gap < 0 else 'LOST VALUE'}</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:{'#22c55e' if _gap < 0 else '#f59e0b'};'>"
         f"${int(_gap):+d}M</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>#{_eff_rank}/30</div></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>#{_eff_rank}/30</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>SPEND EFFICIENCY</div>"
         f"<div style='font-size:1.1rem;font-weight:700;color:#e8f4ff;'>"
-        f"#{_eff_rank} <span style='font-size:0.72rem;color:#7a9ebc;'>MLB</span></div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>#{_lg_rank}/{_lg_total} {_team_lg}</div></div>"
+        f"#{_eff_rank} <span style='font-size:0.72rem;color:{C.text_muted};'>MLB</span></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>#{_lg_rank}/{_lg_total} {_team_lg}</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>$/fWAR</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>${_dpw:.1f}M</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>avg ${_lg_avg_dpw:.1f}M</div></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>avg ${_lg_avg_dpw:.1f}M</div></div>"
         f"<div style='{_kpi}'>"
         f"<div style='font-size:11px;color:{_tc_accent};letter-spacing:0.05em;'>fWAR CONCENTRATION</div>"
         f"<div style='font-size:1.3rem;font-weight:700;color:#e8f4ff;'>{_conc_pct:.0f}%</div>"
-        f"<div style='font-size:0.75rem;color:#93b8d8;'>#{_conc_rank}/30 \u00b7 avg {_conc_avg:.0f}%</div></div>"
+        f"<div style='font-size:0.75rem;color:{C.text_secondary};'>#{_conc_rank}/30 \u00b7 avg {_conc_avg:.0f}%</div></div>"
         f"</div></div>",
         unsafe_allow_html=True,
     )
@@ -409,7 +410,7 @@ def render(*_args, **_kwargs):
                 _act_pit = _active_df[_active_df.get("position_primary", _active_df.get("position", pd.Series())).isin(_PITCHER_POS)]
 
                 st.markdown(
-                    "<div style='font-size:0.82rem;color:#7a9ebc;margin-bottom:0.3rem;'>"
+                    f"<div style='font-size:0.82rem;color:{C.text_muted};margin-bottom:0.3rem;'>"
                     "Color: <span style='color:#4ade80;'>Pre-Arb</span> \u00b7 "
                     "<span style='color:#14b8a6;'>Arb</span> \u00b7 "
                     "<span style='color:#60a5fa;'>Free Agent</span></div>",
@@ -480,7 +481,7 @@ def render(*_args, **_kwargs):
                 _res_tbl = _build_simple_tbl(_restricted_df)
                 st.markdown(f"##### Minor League / Restricted ({len(_restricted_df)} players)")
                 st.markdown(
-                    "<div style='font-size:0.75rem;color:#4a687e;margin-bottom:0.3rem;'>"
+                    f"<div style='font-size:0.75rem;color:{C.text_dim};margin-bottom:0.3rem;'>"
                     "Players on the 40-man roster assigned to minor leagues. "
                     "Still occupy a 40-man spot but are not on the active MLB roster.</div>",
                     unsafe_allow_html=True,
@@ -499,7 +500,7 @@ def render(*_args, **_kwargs):
     with tt2:
         if not all_eff_2025.empty:
             st.markdown(
-                "<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.8rem;line-height:1.6;'>"
+                f"<div style='font-size:0.85rem;color:{C.text_secondary};margin-bottom:0.8rem;line-height:1.6;'>"
                 "Where this team ranks among all 30 MLB teams in 2025. "
                 "<span style='color:#f59e0b;font-weight:600;'>Gold</span> highlights the selected team.</div>",
                 unsafe_allow_html=True,
@@ -514,14 +515,14 @@ def render(*_args, **_kwargs):
                 y=_rk["Team"], x=_rk["dollar_gap_M"], orientation="h",
                 marker_color=_colors,
                 text=[f"${g:+.0f}M" for g in _rk["dollar_gap_M"]],
-                textposition="outside", textfont=dict(color="#d6e8f8", size=9),
+                textposition="outside", textfont=dict(color=C.text_primary, size=9),
                 hovertemplate="%{y}: $%{x:+.0f}M<extra></extra>",
             ))
             _abs_max = max(abs(_rk["dollar_gap_M"].max()), abs(_rk["dollar_gap_M"].min())) * 1.15
             fig_rk.update_layout(**_pt(
                 title=f"2025 Spend Efficiency Ranking \u2014 {_full_name} is #{_eff_rank}",
                 xaxis=dict(title="Surplus Value ($M) \u2014 negative = surplus, positive = lost value",
-                           zeroline=True, zerolinecolor="#4a687e", zerolinewidth=1,
+                           zeroline=True, zerolinecolor=C.text_dim, zerolinewidth=1,
                            range=[-_abs_max, _abs_max]),
                 yaxis=dict(autorange="reversed"),
                 height=max(400, len(_rk) * 22),
@@ -532,13 +533,13 @@ def render(*_args, **_kwargs):
             # fWAR ranking bar
             _wrk = all_eff_2025.sort_values("team_WAR", ascending=False).reset_index(drop=True)
             _wrk["Rank"] = range(1, len(_wrk) + 1)
-            _wcolors = ["#f59e0b" if t == sel_team else "#3b82f6" for t in _wrk["Team"]]
+            _wcolors = ["#f59e0b" if t == sel_team else C.accent_blue for t in _wrk["Team"]]
 
             fig_wrk = go.Figure(go.Bar(
                 y=_wrk["Team"], x=_wrk["team_WAR"], orientation="h",
                 marker_color=_wcolors,
                 text=[f"{w:.1f}" for w in _wrk["team_WAR"]],
-                textposition="outside", textfont=dict(color="#d6e8f8", size=9),
+                textposition="outside", textfont=dict(color=C.text_primary, size=9),
                 hovertemplate="%{y}: %{x:.1f} fWAR<extra></extra>",
             ))
             fig_wrk.update_layout(**_pt(
@@ -573,10 +574,10 @@ def render(*_args, **_kwargs):
             fig_stg = go.Figure(go.Pie(
                 labels=_stg_sal[_stg_col],
                 values=_stg_sal[_sal_col],
-                marker_colors=[_stg_colors.get(s, "#4a687e") for s in _stg_sal[_stg_col]],
+                marker_colors=[_stg_colors.get(s, C.text_dim) for s in _stg_sal[_stg_col]],
                 hole=0.45,
                 textinfo="label+percent",
-                textfont=dict(color="#d6e8f8", size=11),
+                textfont=dict(color=C.text_primary, size=11),
                 hovertemplate="%{label}: $%{value:.1f}M<extra></extra>",
             ))
             fig_stg.update_layout(**_pt(
@@ -612,7 +613,7 @@ def render(*_args, **_kwargs):
                 y=[y[1] for y in _fut_years],
                 marker_color=["#3b82f6", "#60a5fa", "#93c5fd", "#bfdbfe", "#dbeafe", "#e0e7ff", "#ede9fe"],
                 text=[f"${v:.0f}M" for _, v in _fut_years],
-                textposition="outside", textfont=dict(color="#d6e8f8"),
+                textposition="outside", textfont=dict(color=C.text_primary),
                 hovertemplate="%{x}: $%{y:.1f}M<extra></extra>",
             ))
             fig_proj.add_hline(y=244, line_dash="dash", line_color="#f59e0b", opacity=0.5,
@@ -633,7 +634,7 @@ def render(*_args, **_kwargs):
             _cbt_lbl, _cbt_bg, _, _, _cbt_note = _cbt_info(_payroll_m)
             st.markdown(
                 f"<div style='background:{_cbt_bg};border-radius:8px;padding:10px 14px;"
-                f"font-size:0.85rem;color:#d6e8f8;margin-top:0.5rem;'>"
+                f"font-size:0.85rem;color:{C.text_primary};margin-top:0.5rem;'>"
                 f"<b>CBT Status:</b> {_cbt_lbl} at ${_s26:.0f}M \u2014 {_cbt_note}</div>",
                 unsafe_allow_html=True,
             )
@@ -643,7 +644,7 @@ def render(*_args, **_kwargs):
     # ── Tab 4 — Payroll Efficiency (player-level scatter for this team) ──
     with tt4:
         st.markdown(
-            "<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.8rem;line-height:1.6;'>"
+            f"<div style='font-size:0.85rem;color:{C.text_secondary};margin-bottom:0.8rem;line-height:1.6;'>"
             "Player-level fWAR vs Salary for this team's roster. Dots below the orange market "
             "line are underpaid (good value). Dots above are overpaid relative to production.</div>",
             unsafe_allow_html=True,
@@ -670,7 +671,7 @@ def render(*_args, **_kwargs):
         if not _tp_plot.empty:
             if len(_tp_plot) >= 3:
                 _stg_clrs = {"Free Agent": "#3b82f6", "Arb": "#14b8a6", "Pre-Arb": "#4ade80"}
-                _tp_colors = [_stg_clrs.get(s, "#4a687e") for s in _tp_plot.get("Stage_Clean", [])]
+                _tp_colors = [_stg_clrs.get(s, C.text_dim) for s in _tp_plot.get("Stage_Clean", [])]
                 _dash = "\u2014"
                 _tp_hover = _tp_plot.apply(lambda r: (
                     f"<b>{r['Player']}</b><br>"
@@ -743,7 +744,7 @@ def render(*_args, **_kwargs):
     with tt5:
         if not team_eff.empty and len(team_eff) >= 2:
             st.markdown(
-                "<div style='font-size:0.85rem;color:#93b8d8;margin-bottom:0.8rem;'>"
+                f"<div style='font-size:0.85rem;color:{C.text_secondary};margin-bottom:0.8rem;'>"
                 "Season-by-season trends for this team across key metrics (2021\u20132025).</div>",
                 unsafe_allow_html=True,
             )
@@ -753,10 +754,10 @@ def render(*_args, **_kwargs):
             fig_hist = go.Figure()
             fig_hist.add_trace(go.Scatter(
                 x=_te["Year"], y=_te["Wins"], mode="lines+markers+text",
-                marker=dict(color="#3b82f6", size=10),
-                line=dict(color="#3b82f6", width=2),
+                marker=dict(color=C.accent_blue, size=10),
+                line=dict(color=C.accent_blue, width=2),
                 text=[f"{int(w)}" for w in _te["Wins"]],
-                textposition="top center", textfont=dict(color="#d6e8f8", size=10),
+                textposition="top center", textfont=dict(color=C.text_primary, size=10),
                 name="Wins",
                 hovertemplate="%{x}: %{y} wins<extra></extra>",
             ))
@@ -782,7 +783,7 @@ def render(*_args, **_kwargs):
                 y=_gap_vals,
                 marker_color=["#22c55e" if g < 0 else "#f59e0b" for g in _gap_vals],
                 text=[f"${g:+.0f}M" for g in _gap_vals],
-                textposition="outside", textfont=dict(color="#d6e8f8", size=10),
+                textposition="outside", textfont=dict(color=C.text_primary, size=10),
                 hovertemplate="%{x}: $%{y:+.0f}M<extra></extra>",
             ))
             _abs_max_g = max(abs(_gap_vals).max(), 10) * 1.3
@@ -790,11 +791,11 @@ def render(*_args, **_kwargs):
                 title=f"{_full_name} \u2014 Surplus / Lost Value by Season",
                 xaxis=dict(title="Season"),
                 yaxis=dict(title="Surplus (\u2212) / Lost Value (+) $M", zeroline=True,
-                           zerolinecolor="#4a687e", range=[-_abs_max_g, _abs_max_g]),
+                           zerolinecolor=C.text_dim, range=[-_abs_max_g, _abs_max_g]),
                 height=340,
             ))
             st.markdown(
-                "<div style='font-size:0.75rem;color:#7a9ebc;margin-bottom:0.3rem;'>"
+                f"<div style='font-size:0.75rem;color:{C.text_muted};margin-bottom:0.3rem;'>"
                 "Negative (green) = surplus value (winning more than payroll predicts). "
                 "Positive (orange) = lost value (underperforming relative to spend).</div>",
                 unsafe_allow_html=True,
@@ -805,7 +806,7 @@ def render(*_args, **_kwargs):
             fig_pw = go.Figure()
             fig_pw.add_trace(go.Bar(
                 x=_te["Year"].astype(int).astype(str), y=_te["payroll_M"],
-                name="Payroll $M", marker_color="#3b82f6", opacity=0.6,
+                name="Payroll $M", marker_color=C.accent_blue, opacity=0.6,
                 hovertemplate="%{x}: $%{y:.0f}M<extra></extra>",
             ))
             fig_pw.add_trace(go.Scatter(
@@ -862,7 +863,7 @@ def render(*_args, **_kwargs):
                     _conc_ydf = pd.DataFrame(_conc_years)
                     st.markdown("##### fWAR Concentration \u2014 Top 5 Players' Share")
                     st.markdown(
-                        "<div style='font-size:0.82rem;color:#7a9ebc;margin-bottom:0.4rem;'>"
+                        f"<div style='font-size:0.82rem;color:{C.text_muted};margin-bottom:0.4rem;'>"
                         "What percentage of the team's total fWAR comes from just the top 5 players? "
                         "High concentration means the team is heavily dependent on a few stars.</div>",
                         unsafe_allow_html=True,
@@ -871,14 +872,14 @@ def render(*_args, **_kwargs):
                     fig_conc.add_trace(go.Bar(
                         x=_conc_ydf["Year"].astype(str),
                         y=_conc_ydf["Concentration"],
-                        marker_color=["#f59e0b" if c > 65 else "#3b82f6" for c in _conc_ydf["Concentration"]],
+                        marker_color=["#f59e0b" if c > 65 else C.accent_blue for c in _conc_ydf["Concentration"]],
                         text=[f"{c:.0f}%" for c in _conc_ydf["Concentration"]],
-                        textposition="outside", textfont=dict(color="#d6e8f8", size=10),
+                        textposition="outside", textfont=dict(color=C.text_primary, size=10),
                         hovertemplate="%{x}: %{y:.1f}% concentration<extra></extra>",
                     ))
-                    fig_conc.add_hline(y=_conc_avg, line_dash="dash", line_color="#4a687e", opacity=0.6,
+                    fig_conc.add_hline(y=_conc_avg, line_dash="dash", line_color=C.text_dim, opacity=0.6,
                                        annotation_text=f"League avg {_conc_avg:.0f}%",
-                                       annotation_font_color="#7a9ebc", annotation_position="top right")
+                                       annotation_font_color=C.text_muted, annotation_position="top right")
                     fig_conc.update_layout(**_pt(
                         title=f"{_full_name} \u2014 fWAR Concentration (Top 5 Share)",
                         yaxis=dict(title="% of Total fWAR", range=[0, 100]),

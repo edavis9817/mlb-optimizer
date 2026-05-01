@@ -183,6 +183,66 @@ PG_CHART_COLORS = [
 # UI / Theme Constants
 # ══════════════════════════════════════════════════════════════════════════════
 
+
+def _is_light() -> bool:
+    """Return True when the user has light mode active (default)."""
+    try:
+        import streamlit as st
+        return st.session_state.get("light_mode", True)
+    except Exception:
+        return True
+
+
+class _ThemeColors:
+    """Dynamic color palette that adapts to light/dark mode.
+
+    Access like module-level constants: ``C.bg_primary``, ``C.text_primary``, etc.
+    Each access checks the current session state so the colors are always in sync.
+    """
+
+    # ── dark palette ────────────────────────────────────────────────────
+    _DARK = dict(
+        bg_primary="#141d2e", bg_card="#1c2a42", bg_card_surface="#18243a",
+        bg_sidebar="#111a24", bg_dark="#0d1b2a", bg_input="#12202e",
+        bg_hover="#1d2f47",
+        border_primary="#1e3250", border_accent="#253d58",
+        text_primary="#d6e8f8", text_secondary="#93b8d8",
+        text_muted="#7a9ebc", text_dim="#4a687e", text_heading="#d6e8f8",
+        accent_blue="#3b82f6", accent_green="#22c55e", accent_red="#ef4444",
+        accent_orange="#f59e0b", accent_teal="#14b8a6", accent_gold="#c9a94e",
+        eff_top="#14532d", eff_above="#1a3a20", eff_avg="",
+        eff_below="#2d1f0c", eff_bottom="#2d0c0c",
+        stage_bg_pre_arb="#1a6b3a", stage_bg_arb="#0c2a2a",
+        stage_bg_guaranteed="#0c1a2d", stage_bg_fa="#0c1a2d",
+    )
+
+    # ── light palette ───────────────────────────────────────────────────
+    _LIGHT = dict(
+        bg_primary="#f0f2f6", bg_card="#ffffff", bg_card_surface="#f8fafc",
+        bg_sidebar="#e8ebf0", bg_dark="#e2e8f0", bg_input="#ffffff",
+        bg_hover="#f1f5f9",
+        border_primary="#e2e8f0", border_accent="#cbd5e1",
+        text_primary="#1a1a2e", text_secondary="#2d3748",
+        text_muted="#4a5568", text_dim="#718096", text_heading="#1a1a2e",
+        accent_blue="#2b5cc8", accent_green="#16a34a", accent_red="#dc2626",
+        accent_orange="#d97706", accent_teal="#0d9488", accent_gold="#b8860b",
+        eff_top="#dcfce7", eff_above="#ecfdf5", eff_avg="",
+        eff_below="#fef3c7", eff_bottom="#fee2e2",
+        stage_bg_pre_arb="#dcfce7", stage_bg_arb="#ccfbf1",
+        stage_bg_guaranteed="#dbeafe", stage_bg_fa="#dbeafe",
+    )
+
+    def __getattr__(self, name: str) -> str:
+        pal = self._LIGHT if _is_light() else self._DARK
+        try:
+            return pal[name]
+        except KeyError:
+            raise AttributeError(f"No theme color named {name!r}")
+
+
+C = _ThemeColors()
+
+# Legacy aliases — kept for any direct imports elsewhere
 BG_PRIMARY = "#141d2e"
 BG_CARD = "#1c2a42"
 BG_SIDEBAR = "#111a24"
@@ -207,6 +267,14 @@ EFFICIENCY_TIER_COLORS = {
     "Top Tier": "#14532d", "Above Average": "#1a3a20",
     "Average": "", "Below Average": "#2d1f0c", "Bottom": "#2d0c0c",
 }
+
+
+def efficiency_tier_colors() -> dict:
+    """Return efficiency tier bg colors for the active theme."""
+    return {
+        "Top Tier": C.eff_top, "Above Average": C.eff_above,
+        "Average": C.eff_avg, "Below Average": C.eff_below, "Bottom": C.eff_bottom,
+    }
 
 # ══════════════════════════════════════════════════════════════════════════════
 # fWAR Benchmarks (from 2021-2025 data)
