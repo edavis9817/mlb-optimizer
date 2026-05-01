@@ -482,7 +482,7 @@ def render(*_args, **_kwargs):
 
     st.markdown("<div style='margin-top:0.5rem;'></div>", unsafe_allow_html=True)
 
-    def _hbar(df_in, x_col, color_fn, title, x_label, text_fn=None, zero_line=False):
+    def _hbar(df_in, x_col, color_fn, title, x_label, text_fn=None, zero_line=False, height=None):
         """Render a themed horizontal bar chart for rankings."""
         vals   = df_in[x_col].tolist()
         teams  = df_in["Team"].tolist()
@@ -505,7 +505,7 @@ def render(*_args, **_kwargs):
             title=title,
             xaxis=_xaxis,
             yaxis=dict(autorange="reversed"),
-            height=max(340, len(df_in) * 22),
+            height=height or max(340, len(df_in) * 22),
             margin=dict(l=60, r=80, t=42, b=30),
         ))
         return fig
@@ -549,7 +549,21 @@ def render(*_args, **_kwargs):
         _eff = yr_df.sort_values("dollar_gap_M", ascending=True).reset_index(drop=True)
         _eff["Rank"] = range(1, len(_eff) + 1)
 
-        ch1, tb1 = st.columns([3, 2])
+        # Compute avg age per team from player data for the selected year
+        if _paw_25 is not None and not _paw_25.empty and "Age" in _paw_25.columns:
+            _age_by_team = (
+                _paw_25.assign(Age=pd.to_numeric(_paw_25["Age"], errors="coerce"))
+                .dropna(subset=["Age"])
+                .groupby("Team")["Age"].mean().round(1)
+            )
+            _eff = _eff.merge(_age_by_team.rename("Avg Age"), left_on="Team", right_index=True, how="left")
+        else:
+            _eff["Avg Age"] = float("nan")
+
+        # Chart height scales with number of teams
+        _chart_h = max(60 + len(_eff) * 28, 500)
+
+        tb1, ch1 = st.columns([2, 3])
         with ch1:
             st.plotly_chart(_hbar(
                 _eff, "dollar_gap_M",
@@ -558,14 +572,14 @@ def render(*_args, **_kwargs):
                 x_label="$ Gap ($M) \u2014 negative = efficient",
                 text_fn=lambda v: f"${v:+.0f}M",
                 zero_line=True,
+                height=_chart_h,
             ), use_container_width=True, config={"displayModeBar": False})
         with tb1:
-            _e = _eff[["Rank", "Team", "dollar_gap_M", "payroll_M", "Wins", "in_playoffs"]].copy()
-            _e.columns = ["#", "Team", "Gap $M", "Payroll $M", "Wins", "Postseason"]
-            _e["Gap $M"]     = _e["Gap $M"].round(0).astype(int)
+            _e = _eff[["Rank", "Team", "payroll_M", "team_WAR", "dollar_gap_M", "Avg Age"]].copy()
+            _e.columns = ["#", "Team", "Payroll $M", "fWAR", "Gap $M", "Avg Age"]
             _e["Payroll $M"] = _e["Payroll $M"].round(0).astype(int)
-            _e["Wins"]       = _e["Wins"].round(0).astype(int)
-            _e["Postseason"]  = _e["Postseason"].map({True: "\u2713", False: ""})
+            _e["fWAR"]       = _e["fWAR"].round(1)
+            _e["Gap $M"]     = _e["Gap $M"].round(0).astype(int)
 
             def _eff_clr(row):
                 g = row["Gap $M"]
@@ -577,9 +591,9 @@ def render(*_args, **_kwargs):
 
             st.dataframe(
                 _e.style.apply(_eff_clr, axis=1).format(
-                    {"Gap $M": "{:+d}", "Payroll $M": "{:d}", "Wins": "{:d}"}, na_rep="\u2014"),
+                    {"Gap $M": "{:+d}", "Payroll $M": "{:d}", "fWAR": "{:.1f}", "Avg Age": "{:.1f}"}, na_rep="\u2014"),
                 hide_index=True, use_container_width=True,
-                height=min(60 + len(_e) * 35, 720),
+                height=_chart_h,
             )
 
         # Multi-year summary
