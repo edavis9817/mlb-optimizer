@@ -15,6 +15,7 @@ from utils.player_utils import (
     fix_player_name as _fix_player_name,
     headshot_url as _headshot_url,
 )
+from utils.constants import C
 from utils.theme import plotly_theme as _pt
 from utils.data_loading import (
     data_url,
@@ -32,18 +33,18 @@ _STAGE_LABELS = {"Pre-Arb": "Pre-Arbitration", "Arb": "Arbitration", "FA": "Free
 
 def _stage_card(stage_key: str, big_val: str, sub_text: str, unit: str = ""):
     """Render a stage summary card with accent border."""
-    color = _STAGE_COLORS.get(stage_key, "#4a687e")
+    color = _STAGE_COLORS.get(stage_key, C.text_dim)
     label = _STAGE_LABELS.get(stage_key, stage_key)
     return (
-        f"<div style='background:#1c2a42;border:1px solid #1e3050;"
+        f"<div style='background:{C.bg_card};border:1px solid {C.border_primary};"
         f"border-left:3px solid {color};border-radius:8px;"
         f"padding:0.7rem 0.9rem;margin-bottom:0.5rem;text-align:center;'>"
-        f"<div style='font-size:0.7rem;color:#93b8d8;font-weight:600;"
+        f"<div style='font-size:0.7rem;color:{C.text_secondary};font-weight:600;"
         f"letter-spacing:0.05em;'>{label}</div>"
         f"<div style='font-size:1.4rem;font-weight:800;color:{color};"
         f"margin:0.2rem 0;'>{big_val}</div>"
-        f"<div style='font-size:0.68rem;color:#7a9ebc;'>{unit}</div>"
-        f"<div style='font-size:0.65rem;color:#5a7a94;margin-top:0.15rem;'>{sub_text}</div>"
+        f"<div style='font-size:0.68rem;color:{C.text_muted};'>{unit}</div>"
+        f"<div style='font-size:0.65rem;color:{C.text_dim};margin-top:0.15rem;'>{sub_text}</div>"
         f"</div>"
     )
 
@@ -62,39 +63,39 @@ def render(*_args, **_kwargs):
         st.session_state["rk_active_tab"] = _qp_tab
 
     # ── CSS ──────────────────────────────────────────────────────────────────
-    st.markdown("""<style>
-.rk-hdr{background:linear-gradient(135deg,#18243a 0%,#111927 100%);
-  border:1px solid #1e3250;border-radius:12px;padding:0.9rem 1.3rem;margin-bottom:0.8rem;}
-.rk-hdr h2{margin:0;font-size:1.25rem;color:#d6e8f8;font-weight:700;}
-.rk-hdr .rk-sub{font-size:0.72rem;color:#7a9ebc;margin-top:0.15rem;}
-.rk-answer{background:#1c2a42;border:1px solid #1e3250;border-radius:10px;
-  padding:0.6rem 0.8rem;text-align:center;height:165px;min-height:165px;max-height:165px;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;overflow:hidden;
-  width:100%;}
-.rk-answer:hover{border-color:#2a4060;box-shadow:0 0 8px rgba(93,202,165,0.1);}
-.rk-answer .rk-q{font-size:0.72rem;color:#93b8d8;
-  letter-spacing:0.05em;margin-bottom:0.2rem;font-weight:600;}
-.rk-answer .rk-team{font-size:1.25rem;font-weight:800;color:#d6e8f8;line-height:1.1;}
-.rk-answer .rk-val{font-size:0.82rem;color:#93b8d8;margin-top:0.2rem;}
-.rk-answer .rk-icon{font-size:1.3rem;margin-bottom:0.15rem;line-height:1;}
-.rk-box-sel{border:2px solid #5dc9a5 !important;box-shadow:0 0 15px rgba(93,202,165,0.3),0 0 30px rgba(93,202,165,0.15) !important;}
-.rk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.7rem;margin-bottom:0.7rem;}
-.rk-grid a{text-decoration:none;color:inherit;}
-[data-testid="column"] a{text-decoration:none;color:inherit;display:block;}
-[data-testid="column"] .rk-answer{width:100%;}
-@keyframes gentle-pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}
-.rk-hint{text-align:center;color:#4a687e;font-size:0.82rem;margin:0.6rem 0;
-  animation:gentle-pulse 2.5s ease-in-out infinite;}
-.rk-tabs{display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.8rem;
-  border-bottom:1px solid #1e3250;padding-bottom:0.4rem;}
-.rk-tab{padding:0.35rem 0.7rem;border-radius:6px 6px 0 0;font-size:0.75rem;
-  color:#7a9ebc;text-decoration:none;transition:all 0.2s;border:1px solid transparent;
-  border-bottom:none;font-weight:500;}
-.rk-tab:hover{color:#d6e8f8;background:#1c2a42;}
-.rk-tab-active{color:#d6e8f8;background:#1c2a42;border-color:#1e3250;
-  border-bottom:2px solid #5dc9a5;font-weight:700;}
-</style>""", unsafe_allow_html=True)
+    st.markdown("<style>"
+        ".rk-hdr{background:linear-gradient(135deg," + C.bg_card_surface + " 0%," + C.bg_primary + " 100%);"
+        "  border:1px solid " + C.border_primary + ";border-radius:12px;padding:0.9rem 1.3rem;margin-bottom:0.8rem;}"
+        ".rk-hdr h2{margin:0;font-size:1.25rem;color:" + C.text_primary + ";font-weight:700;}"
+        ".rk-hdr .rk-sub{font-size:0.72rem;color:" + C.text_muted + ";margin-top:0.15rem;}"
+        ".rk-answer{background:" + C.bg_card + ";border:1px solid " + C.border_primary + ";border-radius:10px;"
+        "  padding:0.6rem 0.8rem;text-align:center;height:165px;min-height:165px;max-height:165px;"
+        "  display:flex;flex-direction:column;align-items:center;justify-content:center;"
+        "  transition:border-color 0.2s,box-shadow 0.2s;box-sizing:border-box;overflow:hidden;"
+        "  width:100%;}"
+        ".rk-answer:hover{border-color:" + C.border_accent + ";box-shadow:0 0 8px rgba(93,202,165,0.1);}"
+        ".rk-answer .rk-q{font-size:0.72rem;color:" + C.text_secondary + ";"
+        "  letter-spacing:0.05em;margin-bottom:0.2rem;font-weight:600;}"
+        ".rk-answer .rk-team{font-size:1.25rem;font-weight:800;color:" + C.text_primary + ";line-height:1.1;}"
+        ".rk-answer .rk-val{font-size:0.82rem;color:" + C.text_secondary + ";margin-top:0.2rem;}"
+        ".rk-answer .rk-icon{font-size:1.3rem;margin-bottom:0.15rem;line-height:1;}"
+        ".rk-box-sel{border:2px solid #5dc9a5 !important;box-shadow:0 0 15px rgba(93,202,165,0.3),0 0 30px rgba(93,202,165,0.15) !important;}"
+        ".rk-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.7rem;margin-bottom:0.7rem;}"
+        ".rk-grid a{text-decoration:none;color:inherit;}"
+        "[data-testid='column'] a{text-decoration:none;color:inherit;display:block;}"
+        "[data-testid='column'] .rk-answer{width:100%;}"
+        "@keyframes gentle-pulse{0%,100%{opacity:0.4;}50%{opacity:1;}}"
+        ".rk-hint{text-align:center;color:" + C.text_dim + ";font-size:0.82rem;margin:0.6rem 0;"
+        "  animation:gentle-pulse 2.5s ease-in-out infinite;}"
+        ".rk-tabs{display:flex;flex-wrap:wrap;gap:0.3rem;margin-bottom:0.8rem;"
+        "  border-bottom:1px solid " + C.border_primary + ";padding-bottom:0.4rem;}"
+        ".rk-tab{padding:0.35rem 0.7rem;border-radius:6px 6px 0 0;font-size:0.75rem;"
+        "  color:" + C.text_muted + ";text-decoration:none;transition:all 0.2s;border:1px solid transparent;"
+        "  border-bottom:none;font-weight:500;}"
+        ".rk-tab:hover{color:" + C.text_primary + ";background:" + C.bg_card + ";}"
+        ".rk-tab-active{color:" + C.text_primary + ";background:" + C.bg_card + ";border-color:" + C.border_primary + ";"
+        "  border-bottom:2px solid #5dc9a5;font-weight:700;}"
+        "</style>", unsafe_allow_html=True)
 
     # ── Load data ─────────────────────────────────────────────────────────────
     detail_csv  = data_url("efficiency_detail.csv")
@@ -119,7 +120,7 @@ def render(*_args, **_kwargs):
     st.markdown(
         "<div class='rk-hdr'>"
         "<h2>\U0001f3c6 MLB Toolbox Rankings</h2>"
-        "<div class='rk-sub' style='font-size:0.88rem;color:#93b8d8;'>The 30-team report card on spending vs. winning.</div>"
+        f"<div class='rk-sub' style='font-size:0.88rem;color:{C.text_secondary};'>The 30-team report card on spending vs. winning.</div>"
         "</div>",
         unsafe_allow_html=True,
     )
@@ -129,7 +130,7 @@ def render(*_args, **_kwargs):
     _hint_col, _yr_col = st.columns([8, 2])
     with _hint_col:
         st.markdown(
-            "<div style='padding-top:0.35rem;font-size:1rem;color:#93b8d8;font-weight:700;'>"
+            f"<div style='padding-top:0.35rem;font-size:1rem;color:{C.text_secondary};font-weight:700;'>"
             "Click a box to get started, and start exploring more in-depth</div>",
             unsafe_allow_html=True,
         )
@@ -380,13 +381,13 @@ def render(*_args, **_kwargs):
         _img = (f"<img src='{_headshot_url(mid, 120)}' width='50' height='50' loading='lazy' "
                 f"style='border-radius:50%;object-fit:cover;margin-bottom:4px;' "
                 f"onerror=\"this.style.display='none'\">") if mid else ""
-        _sub_html = f"<div style='font-size:0.62rem;color:#4a687e;'>{psub}</div>" if psub else ""
+        _sub_html = f"<div style='font-size:0.62rem;color:{C.text_dim};'>{psub}</div>" if psub else ""
         return (
             f"<a href='{_href}' target='_self' style='text-decoration:none;color:inherit;display:block;'>"
             f"<div class='rk-answer {_sel_cls}'>"
             f"<div class='rk-q'>{title}</div>{_img}"
             f"<div class='rk-team'>{pname}</div>"
-            f"<div style='font-size:0.75rem;color:#93b8d8;'>{pteam}</div>"
+            f"<div style='font-size:0.75rem;color:{C.text_secondary};'>{pteam}</div>"
             f"<div class='rk-val'>{pval}</div>"
             f"{_sub_html}</div></a>"
         )
@@ -491,11 +492,11 @@ def render(*_args, **_kwargs):
             y=teams, x=vals, orientation="h",
             marker=dict(color=colors, line=dict(width=0)),
             text=texts, textposition="outside",
-            textfont=dict(color="#d6e8f8", size=9),
+            textfont=dict(color=C.text_primary, size=9),
             hovertemplate="%{y}: %{text}<extra></extra>",
         ))
         _xaxis = dict(title=x_label, zeroline=zero_line,
-                       zerolinecolor="#4a687e", zerolinewidth=1)
+                       zerolinecolor=C.text_dim, zerolinewidth=1)
         # Center 0 on charts with diverging values
         if zero_line and vals:
             _abs_max = max(abs(v) for v in vals) * 1.15
@@ -538,7 +539,7 @@ def render(*_args, **_kwargs):
     # ── Tab 1: Efficiency ─────────────────────────────────────────────────────
     if _act_tab == "efficiency":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;'>"
             "Dollar gap from the <b>Cost Effective Line</b> \u2014 how much more or less each team "
             "spends relative to what their wins cost at league-average market rates. "
             "<span style='color:#22c55e;font-weight:600;'>Green</span> = below the line (efficient). "
@@ -621,7 +622,7 @@ def render(*_args, **_kwargs):
     # ── Tab 2: fWAR ───────────────────────────────────────────────────────────
     if _act_tab == "fwar":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;'>"
             "Total team WAR for the selected season across all pitchers and position players. "
             "Higher WAR = more total roster talent. Top-5 teams highlighted in green.</div>",
             unsafe_allow_html=True,
@@ -636,7 +637,7 @@ def render(*_args, **_kwargs):
                 _war, "team_WAR",
                 color_fn=lambda v: (
                     "#22c55e" if v >= _war_max * 0.85 else
-                    "#4873b8" if v >= _war_max * 0.60 else "#4a687e"
+                    "#4873b8" if v >= _war_max * 0.60 else C.text_dim
                 ),
                 title=f"{sel_year} \u2014 Total Team fWAR",
                 x_label="Total fWAR",
@@ -665,7 +666,7 @@ def render(*_args, **_kwargs):
         st.markdown("---")
         st.markdown("### Player Rankings")
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.8rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.8rem;line-height:1.6;'>"
             f"Top 25 individual players by fWAR for the <b>{sel_year}</b> season.</div>",
             unsafe_allow_html=True,
         )
@@ -695,7 +696,7 @@ def render(*_args, **_kwargs):
         st.markdown("---")
         st.markdown("### fWAR-to-Wins Relationship")
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.8rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.8rem;line-height:1.6;'>"
             "Team fWAR (total roster talent) is one of the strongest predictors of regular-season wins. "
             "Each dot below is one team-season. <span style='color:#22c55e;font-weight:600;'>Green</span> = "
             "made the playoffs. The orange regression line shows the expected wins for a given fWAR level. "
@@ -720,7 +721,7 @@ def render(*_args, **_kwargs):
                 _r2 = 1 - (_ss_res / _ss_tot) if _ss_tot > 0 else 0
 
                 st.markdown(
-                    f"<div style='font-size:0.88rem;color:#d6e8f8;font-weight:600;margin-bottom:0.5rem;'>"
+                    f"<div style='font-size:0.88rem;color:{C.text_primary};font-weight:600;margin-bottom:0.5rem;'>"
                     f"fWAR explains <span style='color:#60a5fa;'>{_r2 * 100:.1f}%</span> of win variation "
                     f"across {len(_f1)} team-seasons (2025-2021). Each additional fWAR is worth roughly "
                     f"<span style='color:#60a5fa;'>{_coef[0]:.2f}</span> wins.</div>",
@@ -728,7 +729,7 @@ def render(*_args, **_kwargs):
                 )
 
                 _f1_playoff = _f1.get("in_playoffs", pd.Series([False] * len(_f1)))
-                _f1_colors = ["#22c55e" if p else "#4a687e" for p in _f1_playoff]
+                _f1_colors = ["#22c55e" if p else C.text_dim for p in _f1_playoff]
                 _f1_hover = _f1.apply(lambda r: (
                     f"<b>{r['Team']}</b> {int(r['Year'])}<br>"
                     + f"fWAR: {r['team_WAR']:.1f} \u00b7 Wins: {int(r['Wins'])}<br>"
@@ -757,8 +758,8 @@ def render(*_args, **_kwargs):
                     yaxis=dict(title="Actual Wins"),
                     height=440, showlegend=True,
                     legend=dict(orientation="h", y=1.02, x=1, xanchor="right", yanchor="bottom"),
-                    hoverlabel=dict(bgcolor="#0d1f38", bordercolor="#1e3a5f",
-                                    font=dict(color="#dbeafe", size=12)),
+                    hoverlabel=dict(bgcolor=C.bg_dark, bordercolor=C.border_primary,
+                                    font=dict(color=C.text_primary, size=12)),
                 ))
                 _f1_col, _ = st.columns([3, 1])
                 with _f1_col:
@@ -828,8 +829,8 @@ def render(*_args, **_kwargs):
                     )
 
                 st.markdown(
-                    "<div style='background:#0d1e35;border-left:3px solid #3b6fd4;border-radius:0 8px 8px 0;"
-                    "padding:0.7rem 1rem;margin-top:0.6rem;font-size:0.82rem;color:#93b8d8;line-height:1.6;'>"
+                    f"<div style='background:{C.bg_dark};border-left:3px solid #3b6fd4;border-radius:0 8px 8px 0;"
+                    f"padding:0.7rem 1rem;margin-top:0.6rem;font-size:0.82rem;color:{C.text_secondary};line-height:1.6;'>"
                     "<b style='color:#60a5fa;'>Research context:</b> Over the past decade, World Series "
                     "champions averaged 8th in payroll \u2014 efficient roster construction matters more than "
                     "total spend once you reach the postseason.</div>",
@@ -839,7 +840,7 @@ def render(*_args, **_kwargs):
     # ── Tab 3: Salary ─────────────────────────────────────────────────────────
     if _act_tab == "salary":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;'>"
             "Team payroll for the selected season. Use $/WAR to compare how much each team "
             "paid per unit of performance. Top-5 spenders in gold, bottom-5 in blue.</div>",
             unsafe_allow_html=True,
@@ -885,7 +886,7 @@ def render(*_args, **_kwargs):
         st.markdown("---")
         st.markdown("### Marginal Spending Impact")
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.8rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.8rem;line-height:1.6;'>"
             "Not all payroll dollars spent are equal. The first $100M spent gains the most wins per $ "
             "than the next tier $244M to $300M+. Based on this nonlinear relationship, each bar below "
             "shows how many additional wins a team can expect per $10M spent within that spending tier, "
@@ -926,14 +927,14 @@ def render(*_args, **_kwargs):
                 y=_sl_names, x=_sl_vals, orientation="h",
                 marker_color=_sl_colors,
                 text=[f"{v:+.2f} wins" for v in _sl_vals],
-                textposition="outside", textfont=dict(color="#dbeafe", size=10),
+                textposition="outside", textfont=dict(color=C.text_primary, size=10),
                 hovertemplate="%{y}: %{x:.2f} wins per $10M<extra></extra>",
             ))
             _xmax_f2 = max(abs(v) for v in _sl_vals) * 1.5 if _sl_vals else 3
             fig_f2.update_layout(**_pt(
                 title="Marginal Wins per $10M by Spending Tier",
                 xaxis=dict(title="Wins per $10M spent",
-                           zeroline=True, zerolinecolor="#4a687e", zerolinewidth=1,
+                           zeroline=True, zerolinecolor=C.text_dim, zerolinewidth=1,
                            range=[-_xmax_f2, _xmax_f2]),
                 yaxis=dict(autorange="reversed"),
                 height=300,
@@ -950,8 +951,8 @@ def render(*_args, **_kwargs):
                 _cur_slope = _slopes[_cur_tier_idx][1]
                 _add_wins = _cur_slope * (_spend_add / 10)
                 st.markdown(
-                    f"<div style='background:#0d1e35;border:1px solid #1e3250;border-radius:8px;"
-                    f"padding:0.8rem 1rem;font-size:0.85rem;color:#d6e8f8;'>"
+                    f"<div style='background:{C.bg_dark};border:1px solid {C.border_primary};border-radius:8px;"
+                    f"padding:0.8rem 1rem;font-size:0.85rem;color:{C.text_primary};'>"
                     f"Adding <b>${_spend_add}M</b> at the <b>{_slopes[_cur_tier_idx][0]}</b> tier "
                     f"buys ~<b>{_add_wins:.1f}</b> additional wins "
                     f"(slope: {_cur_slope:.2f} wins/$10M)."
@@ -962,7 +963,7 @@ def render(*_args, **_kwargs):
     # ── Tab 4: Win Performance ────────────────────────────────────────────────
     if _act_tab == "winperf":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;'>"
             "Actual wins minus the wins <b>predicted by payroll</b> from the league regression. "
             "<span style='color:#22c55e;font-weight:600;'>Green</span> = team wins more than their "
             "spending predicts (efficient roster building). "
@@ -1011,13 +1012,13 @@ def render(*_args, **_kwargs):
     if _act_tab == "contract_value":
         # Explainer
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;line-height:1.6;'>"
-            "<b style='color:#d6e8f8;'>Contract Value</b> measures how much on-field production "
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;line-height:1.6;'>"
+            f"<b style='color:{C.text_primary};'>Contract Value</b> measures how much on-field production "
             "a player delivers per dollar of salary. <b>Higher is better</b> — it means the player "
             "produces more fWAR for every million spent. "
             "<span style='color:#5dc9a5;'>Pre-Arb</span> players typically offer the best value "
             "because they earn near league minimum."
-            "<br><span style='font-size:0.75rem;color:#5a7a94;'>Formula: "
+            f"<br><span style='font-size:0.75rem;color:{C.text_dim};'>Formula: "
             "<code style='color:#60a5fa;'>Contract Value = fWAR ÷ Salary ($M)</code></span></div>",
             unsafe_allow_html=True,
         )
@@ -1031,7 +1032,7 @@ def render(*_args, **_kwargs):
                 with _cv_left:
                     if not _cv_top.empty:
                         _cv_bar_colors = [
-                            _STAGE_COLORS.get(s, "#4a687e")
+                            _STAGE_COLORS.get(s, C.text_dim)
                             for s in _cv_top.get("Stage_Clean", pd.Series([""] * len(_cv_top)))
                         ]
                         _cv_labels = [
@@ -1042,7 +1043,7 @@ def render(*_args, **_kwargs):
                             marker=dict(color=_cv_bar_colors, line=dict(width=0)),
                             text=[f"{v:.2f}" for v in _cv_top["fWAR_per_M"]],
                             textposition="outside",
-                            textfont=dict(color="#d6e8f8", size=9),
+                            textfont=dict(color=C.text_primary, size=9),
                             hovertemplate="%{y}: %{x:.2f} fWAR/$M<extra></extra>",
                         ))
                         fig_cv.update_layout(**_pt(
@@ -1112,11 +1113,11 @@ def render(*_args, **_kwargs):
     if _act_tab == "stability":
         # Explainer
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;line-height:1.6;'>"
-            "<b style='color:#d6e8f8;'>WAR Stability Rating (WSR)</b> measures how consistently "
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;line-height:1.6;'>"
+            f"<b style='color:{C.text_primary};'>WAR Stability Rating (WSR)</b> measures how consistently "
             "a player produces fWAR year over year. <b>Higher is better</b> — a high WSR means "
             "you can count on reliable production, not a one-year outlier."
-            "<br><span style='font-size:0.75rem;color:#5a7a94;'>Formula: "
+            f"<br><span style='font-size:0.75rem;color:{C.text_dim};'>Formula: "
             "<code style='color:#60a5fa;'>WSR = Mean fWAR ÷ (1 + Std Dev fWAR)</code> · "
             "Players with 3+ seasons included.</span></div>",
             unsafe_allow_html=True,
@@ -1154,7 +1155,7 @@ def render(*_args, **_kwargs):
                         _p = _row["Player"]
                         _pdata = _ws_ts[_ws_ts["Player"] == _p].sort_values("Year")
                         _stg = str(_row.get("Stage_Clean", ""))
-                        _clr = _STAGE_COLORS.get(_stg, "#4a687e")
+                        _clr = _STAGE_COLORS.get(_stg, C.text_dim)
                         fig_ws.add_trace(go.Scatter(
                             x=_pdata["Year"].astype(int), y=_pdata["WAR_Total"],
                             mode="lines+markers", name=_p,
@@ -1186,7 +1187,7 @@ def render(*_args, **_kwargs):
                 st.markdown("---")
                 st.markdown("##### Who's Trending Up")
                 st.markdown(
-                    "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;'>"
+                    f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;'>"
                     "Players whose fWAR has been increasing over the selected time window "
                     "(positive slope). Steeper lines = faster improvement.</div>",
                     unsafe_allow_html=True,
@@ -1220,7 +1221,7 @@ def render(*_args, **_kwargs):
                             for _, _row in _trending.iterrows():
                                 _p = _row["Player"]
                                 _pdata = _tu_ts[_tu_ts["Player"] == _p].sort_values("Year")
-                                _clr = _STAGE_COLORS.get(str(_row.get("Stage_Clean", "")), "#4a687e")
+                                _clr = _STAGE_COLORS.get(str(_row.get("Stage_Clean", "")), C.text_dim)
                                 fig_tu.add_trace(go.Scatter(
                                     x=_pdata["Year"].astype(int), y=_pdata["WAR_Total"],
                                     mode="lines+markers", name=_p,
@@ -1255,7 +1256,7 @@ def render(*_args, **_kwargs):
     # ── Tab 7: Playoff Success ───────────────────────────────────────────────
     if _act_tab == "playoff_success":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;line-height:1.6;'>"
             "Do teams that spend efficiently actually win more in October? We compare playoff "
             "appearance rates between the most and least efficient teams across 2021–2025.</div>",
             unsafe_allow_html=True,
@@ -1291,7 +1292,7 @@ def render(*_args, **_kwargs):
                             x=_tier_df["Team"], y=_tier_df["playoff_rate"],
                             name=_tier_name, marker_color=_color,
                             text=[f"{v:.0f}%" for v in _tier_df["playoff_rate"]],
-                            textposition="outside", textfont=dict(size=9, color="#d6e8f8"),
+                            textposition="outside", textfont=dict(size=9, color=C.text_primary),
                             hovertemplate="%{x}: %{y:.0f}% playoff rate<extra></extra>",
                         ))
                     fig_ps.update_layout(**_pt(
@@ -1312,14 +1313,14 @@ def render(*_args, **_kwargs):
                         _rate = _tier["playoff_rate"].mean()
                         _apps = int(_tier["playoff_apps"].sum())
                         st.markdown(
-                            f"<div style='background:#1c2a42;border:1px solid #1e3050;"
+                            f"<div style='background:{C.bg_card};border:1px solid {C.border_primary};"
                             f"border-left:3px solid {_clr};border-radius:8px;"
                             f"padding:0.7rem 0.9rem;margin-bottom:0.5rem;text-align:center;'>"
-                            f"<div style='font-size:0.7rem;color:#93b8d8;font-weight:600;'>{_label} Efficiency</div>"
+                            f"<div style='font-size:0.7rem;color:{C.text_secondary};font-weight:600;'>{_label} Efficiency</div>"
                             f"<div style='font-size:1.4rem;font-weight:800;color:{_clr};margin:0.2rem 0;'>"
                             f"{_rate:.0f}%</div>"
-                            f"<div style='font-size:0.68rem;color:#7a9ebc;'>playoff rate</div>"
-                            f"<div style='font-size:0.65rem;color:#5a7a94;'>{_apps} appearances over 5 yr</div>"
+                            f"<div style='font-size:0.68rem;color:{C.text_muted};'>playoff rate</div>"
+                            f"<div style='font-size:0.65rem;color:{C.text_dim};'>{_apps} appearances over 5 yr</div>"
                             f"</div>",
                             unsafe_allow_html=True,
                         )
@@ -1366,7 +1367,7 @@ def render(*_args, **_kwargs):
     # ── Tab 8: fWAR Cost ─────────────────────────────────────────────────────
     if _act_tab == "fwar_cost":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;line-height:1.6;'>"
             "The market price of one win fluctuates each year. Here's what teams pay per fWAR "
             "across career stages — Pre-Arb players cost a fraction of free agents.</div>",
             unsafe_allow_html=True,
@@ -1427,7 +1428,7 @@ def render(*_args, **_kwargs):
     # ── Tab 9: Position Value ────────────────────────────────────────────────
     if _act_tab == "position_value":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;line-height:1.6;'>"
             "Which positions give teams the most production per dollar? Position scarcity "
             "and market dynamics create big differences in value.</div>",
             unsafe_allow_html=True,
@@ -1449,13 +1450,13 @@ def render(*_args, **_kwargs):
                 _pv_left, _pv_right = st.columns([7, 3])
                 with _pv_left:
                     _pv_colors = ["#22c55e" if v >= _pv_avg.quantile(0.75) else
-                                  "#4873b8" if v >= _pv_avg.quantile(0.25) else "#4a687e"
+                                  "#4873b8" if v >= _pv_avg.quantile(0.25) else C.text_dim
                                   for v in _pv_avg.values]
                     fig_pv = go.Figure(go.Bar(
                         y=_pv_avg.index.tolist(), x=_pv_avg.values.tolist(), orientation="h",
                         marker=dict(color=_pv_colors, line=dict(width=0)),
                         text=[f"{v:.2f}" for v in _pv_avg.values],
-                        textposition="outside", textfont=dict(color="#d6e8f8", size=10),
+                        textposition="outside", textfont=dict(color=C.text_primary, size=10),
                         hovertemplate="%{y}: %{x:.2f} fWAR/$M<extra></extra>",
                     ))
                     fig_pv.update_layout(**_pt(
@@ -1478,30 +1479,30 @@ def render(*_args, **_kwargs):
                     _biggest_val = _pv_delta.max() if not _pv_delta.empty else 0
 
                     st.markdown(
-                        f"<div style='background:#1c2a42;border:1px solid #1e3050;"
+                        f"<div style='background:{C.bg_card};border:1px solid {C.border_primary};"
                         f"border-left:3px solid #22c55e;border-radius:8px;"
                         f"padding:0.7rem 0.9rem;margin-bottom:0.5rem;text-align:center;'>"
-                        f"<div style='font-size:0.7rem;color:#93b8d8;font-weight:600;'>Most Efficient</div>"
+                        f"<div style='font-size:0.7rem;color:{C.text_secondary};font-weight:600;'>Most Efficient</div>"
                         f"<div style='font-size:1.4rem;font-weight:800;color:#22c55e;margin:0.2rem 0;'>{_best_p}</div>"
-                        f"<div style='font-size:0.68rem;color:#7a9ebc;'>{_pv_avg.max():.2f} fWAR/$M</div></div>",
+                        f"<div style='font-size:0.68rem;color:{C.text_muted};'>{_pv_avg.max():.2f} fWAR/$M</div></div>",
                         unsafe_allow_html=True,
                     )
                     st.markdown(
-                        f"<div style='background:#1c2a42;border:1px solid #1e3050;"
+                        f"<div style='background:{C.bg_card};border:1px solid {C.border_primary};"
                         f"border-left:3px solid #ef4444;border-radius:8px;"
                         f"padding:0.7rem 0.9rem;margin-bottom:0.5rem;text-align:center;'>"
-                        f"<div style='font-size:0.7rem;color:#93b8d8;font-weight:600;'>Least Efficient</div>"
+                        f"<div style='font-size:0.7rem;color:{C.text_secondary};font-weight:600;'>Least Efficient</div>"
                         f"<div style='font-size:1.4rem;font-weight:800;color:#ef4444;margin:0.2rem 0;'>{_worst_p}</div>"
-                        f"<div style='font-size:0.68rem;color:#7a9ebc;'>{_pv_avg.min():.2f} fWAR/$M</div></div>",
+                        f"<div style='font-size:0.68rem;color:{C.text_muted};'>{_pv_avg.min():.2f} fWAR/$M</div></div>",
                         unsafe_allow_html=True,
                     )
                     st.markdown(
-                        f"<div style='background:#1c2a42;border:1px solid #1e3050;"
+                        f"<div style='background:{C.bg_card};border:1px solid {C.border_primary};"
                         f"border-left:3px solid #60a5fa;border-radius:8px;"
                         f"padding:0.7rem 0.9rem;margin-bottom:0.5rem;text-align:center;'>"
-                        f"<div style='font-size:0.7rem;color:#93b8d8;font-weight:600;'>Biggest Change YoY</div>"
+                        f"<div style='font-size:0.7rem;color:{C.text_secondary};font-weight:600;'>Biggest Change YoY</div>"
                         f"<div style='font-size:1.4rem;font-weight:800;color:#60a5fa;margin:0.2rem 0;'>{_biggest_change}</div>"
-                        f"<div style='font-size:0.68rem;color:#7a9ebc;'>+{_biggest_val:.2f} fWAR/$M vs prior year</div></div>",
+                        f"<div style='font-size:0.68rem;color:{C.text_muted};'>+{_biggest_val:.2f} fWAR/$M vs prior year</div></div>",
                         unsafe_allow_html=True,
                     )
 
@@ -1538,11 +1539,11 @@ def render(*_args, **_kwargs):
     # ── Tab 10: Age Value ───────────────────────────────────────────────────
     if _act_tab == "age_value":
         st.markdown(
-            "<div style='font-size:0.82rem;color:#93b8d8;margin-bottom:0.6rem;line-height:1.6;'>"
+            f"<div style='font-size:0.82rem;color:{C.text_secondary};margin-bottom:0.6rem;line-height:1.6;'>"
             "At what age do players deliver the most production per dollar? Young players on "
             "pre-arb deals offer extreme value, but peak performance often comes later. "
             "This analysis finds the sweet spot."
-            "<br><span style='font-size:0.75rem;color:#5a7a94;'>Formula: "
+            f"<br><span style='font-size:0.75rem;color:{C.text_dim};'>Formula: "
             "<code style='color:#60a5fa;'>Age Efficiency = Avg fWAR \u00f7 Avg Salary (&#36;M)</code>"
             "</span></div>",
             unsafe_allow_html=True,
@@ -1585,7 +1586,7 @@ def render(*_args, **_kwargs):
                             x=_av_grp["_age_int"], y=_av_grp["_wpm"],
                             marker=dict(color=_av_colors, line=dict(width=0)),
                             text=[f"{v:.2f}" for v in _av_grp["_wpm"]],
-                            textposition="outside", textfont=dict(color="#d6e8f8", size=9),
+                            textposition="outside", textfont=dict(color=C.text_primary, size=9),
                             hovertemplate=(
                                 "Age %{x}<br>fWAR/&#36;M: %{y:.2f}<br>"
                                 "Players: %{customdata[0]}<br>"
@@ -1661,8 +1662,8 @@ def render(*_args, **_kwargs):
                     _lg_avg_wpm = _av_cur["_wpm"].mean() if not _av_cur.empty else 1
                     _pct_above = ((_peak_wpm["_wpm"] / max(_lg_avg_wpm, 0.01)) - 1) * 100
                     st.markdown(
-                        f"<div style='background:#0d1e35;border-left:3px solid #5dc9a5;border-radius:0 8px 8px 0;"
-                        f"padding:0.7rem 1rem;margin-top:0.6rem;font-size:0.82rem;color:#93b8d8;line-height:1.6;'>"
+                        f"<div style='background:{C.bg_dark};border-left:3px solid #5dc9a5;border-radius:0 8px 8px 0;"
+                        f"padding:0.7rem 1rem;margin-top:0.6rem;font-size:0.82rem;color:{C.text_secondary};line-height:1.6;'>"
                         f"Players aged <b style='color:#5dc9a5;'>{int(_peak_wpm['_age_int'])}</b> produced the "
                         f"best value in {sel_year}, averaging <b style='color:#5dc9a5;'>"
                         f"{_peak_wpm['_wpm']:.2f} fWAR/&#36;M</b>. "
