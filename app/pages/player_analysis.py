@@ -16,6 +16,7 @@ from utils.components import (
     render_feedback_widget as _render_feedback_widget,
     render_glossary as _render_glossary,
 )
+from utils.constants import C
 from utils.theme import plotly_theme as _pt
 from utils.data_loading import (
     R2_BASE_URL,
@@ -134,29 +135,31 @@ def _render_efficiency_frontier():
     _sal_bounds = (float(raw["Salary_M"].min()), float(raw["Salary_M"].max()))
 
     # -- CSS: compact filter card + polished tabs ------------------------------
-    st.markdown("""<style>
-/* Compact filter column labels (EF page) */
-div[data-testid='column']:first-of-type label{
-  font-size:0.70rem!important;margin-bottom:0!important;
-  line-height:1.2!important;color:#7a9ebc!important;}
-div[data-testid='column']:first-of-type .stSelectbox>div,
-div[data-testid='column']:first-of-type .stMultiSelect>div{font-size:0.70rem!important;}
-div[data-testid='column']:first-of-type p{font-size:0.70rem!important;margin:0.05rem 0!important;}
-div[data-testid='column']:first-of-type hr{margin:0.2rem 0!important;border-color:#1e3250!important;}
-div[data-testid='column']:first-of-type .stMultiSelect [data-baseweb='select']>div{
-  padding:1px 4px!important;min-height:26px!important;}
-div[data-testid='column']:first-of-type .stSelectbox [data-baseweb='select']>div{
-  padding:2px 6px!important;min-height:26px!important;}
-div[data-testid='column']:first-of-type .stSlider{
-  padding-top:0!important;padding-bottom:0.05rem!important;}
-</style>""", unsafe_allow_html=True)
+    st.markdown(
+        "<style>"
+        "div[data-testid='column']:first-of-type label{"
+        "  font-size:0.70rem!important;margin-bottom:0!important;"
+        "  line-height:1.2!important;color:" + C.text_muted + "!important;}"
+        "div[data-testid='column']:first-of-type .stSelectbox>div,"
+        "div[data-testid='column']:first-of-type .stMultiSelect>div{font-size:0.70rem!important;}"
+        "div[data-testid='column']:first-of-type p{font-size:0.70rem!important;margin:0.05rem 0!important;}"
+        "div[data-testid='column']:first-of-type hr{margin:0.2rem 0!important;border-color:" + C.border_primary + "!important;}"
+        "div[data-testid='column']:first-of-type .stMultiSelect [data-baseweb='select']>div{"
+        "  padding:1px 4px!important;min-height:26px!important;}"
+        "div[data-testid='column']:first-of-type .stSelectbox [data-baseweb='select']>div{"
+        "  padding:2px 6px!important;min-height:26px!important;}"
+        "div[data-testid='column']:first-of-type .stSlider{"
+        "  padding-top:0!important;padding-bottom:0.05rem!important;}"
+        "</style>",
+        unsafe_allow_html=True,
+    )
 
     col_f, col_m = st.columns([0.82, 4.5])
 
     # -- Filter card -----------------------------------------------------------
     with col_f:
         st.markdown(
-            '<div style="font-size:11px;font-weight:700;color:#4a687e;'
+            f'<div style="font-size:11px;font-weight:700;color:{C.text_dim};'
             'text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Filters</div>',
             unsafe_allow_html=True,
         )
@@ -184,9 +187,9 @@ div[data-testid='column']:first-of-type .stSlider{
             _war_sel   = st.slider("WAR", float(_war_bounds[0]), float(_war_bounds[1]), _war_bounds, step=0.1, key="ef_war")
             _sal_sel   = st.slider("Salary ($M)", float(_sal_bounds[0]), float(_sal_bounds[1]), _sal_bounds, step=0.5, key="ef_sal")
 
-        st.markdown("<hr style='border-color:#1e3250;margin:8px 0;'>", unsafe_allow_html=True)
+        st.markdown(f"<hr style='border-color:{C.border_primary};margin:8px 0;'>", unsafe_allow_html=True)
         st.markdown(
-            '<div style="font-size:11px;font-weight:700;color:#4a687e;'
+            f'<div style="font-size:11px;font-weight:700;color:{C.text_dim};'
             'text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Display</div>',
             unsafe_allow_html=True,
         )
@@ -197,7 +200,7 @@ div[data-testid='column']:first-of-type .stSlider{
         _hi_eff     = st.checkbox("Highlight efficient", value=False, key="ef_hi")
         _eff_thresh = st.slider("Efficiency %", 5, 30, 15, key="ef_thresh")
 
-        st.markdown("<hr style='border-color:#1e3250;margin:8px 0;'>", unsafe_allow_html=True)
+        st.markdown(f"<hr style='border-color:{C.border_primary};margin:8px 0;'>", unsafe_allow_html=True)
         if st.button("\u21ba  Reset Filters", use_container_width=True, key="ef_reset_btn"):
             _keep = {"ef_reset_btn"}
             for _k in [k for k in st.session_state if k.startswith("ef_") and k not in _keep]:
@@ -284,12 +287,12 @@ div[data-testid='column']:first-of-type .stSlider{
         _r2_txt   = f"R\u00b2={_mod.rsquared:.3f}" if _reg_method == "OLS" else _reg_lbl
 
         # -- Page header card --------------------------------------------------
-        st.markdown(f"""<div class="ef-hdr" style="background:linear-gradient(135deg,#0f2035,#0d1b2a);border:1px solid #1e3a5c;
+        st.markdown(f"""<div class="ef-hdr" style="background:linear-gradient(135deg,#0f2035,{C.bg_dark});border:1px solid #1e3a5c;
 border-radius:10px;padding:16px 20px;margin-bottom:14px;display:flex;align-items:center;
 justify-content:space-between;gap:16px;flex-wrap:wrap;">
   <div style="flex:1;min-width:200px;">
     <div style="font-size:20px;font-weight:800;color:#e8f4ff;margin-bottom:5px;">Player Analysis</div>
-    <div style="font-size:13px;color:#93b8d8;line-height:1.6;">
+    <div style="font-size:13px;color:{C.text_secondary};line-height:1.6;">
       Explore how every MLB player's salary compares to their on-field production (fWAR).
       Use the tabs below to view the market value regression, multi-year efficiency, age curves,
       team breakdowns, and player stability ratings. Use the filters on the left to narrow
@@ -297,16 +300,16 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
     </div>
   </div>
   <div class="ef-hdr-stats" style="display:flex;gap:10px;flex-shrink:0;flex-wrap:wrap;">
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
-      <div style="font-size:10px;color:#7a9ebc;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Players</div>
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:10px;color:{C.text_muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Players</div>
       <div style="font-size:18px;font-weight:700;color:#e8f4ff;">{_n_shown:,}</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
-      <div style="font-size:10px;color:#7a9ebc;letter-spacing:1px;margin-bottom:2px;">MEDIAN $/fWAR</div>
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:10px;color:{C.text_muted};letter-spacing:1px;margin-bottom:2px;">MEDIAN $/fWAR</div>
       <div style="font-size:18px;font-weight:700;color:#e8f4ff;">${_med_dpw:.1f}M</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
-      <div style="font-size:10px;color:#7a9ebc;text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Active Filters</div>
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:8px;padding:8px 14px;text-align:center;">
+      <div style="font-size:10px;color:{C.text_muted};text-transform:uppercase;letter-spacing:1px;margin-bottom:2px;">Active Filters</div>
       <div style="font-size:12px;font-weight:600;color:#a8c8e8;">{_flt_tms} \u00b7 {_flt_yrs}</div>
     </div>
   </div>
@@ -331,8 +334,8 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
             st.markdown(
                 "<div style='background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;"
                 "padding:14px 18px;margin-bottom:12px;'>"
-                "<div style='font-size:1rem;font-weight:700;color:#d6e8f8;margin-bottom:6px;'>Cost Effective Line</div>"
-                "<div style='font-size:0.85rem;color:#93b8d8;line-height:1.7;'>"
+                f"<div style='font-size:1rem;font-weight:700;color:{C.text_primary};margin-bottom:6px;'>Cost Effective Line</div>"
+                f"<div style='font-size:0.85rem;color:{C.text_secondary};line-height:1.7;'>"
                 "This scatter plot compares every player's <b>actual salary</b> (Y-axis) against their "
                 "<b>fWAR production</b> (X-axis). The <span style='color:#f4a261;font-weight:600;'>orange trendline</span> "
                 "is the market average \u2014 it shows what teams typically pay for a given level of production.<br><br>"
@@ -361,22 +364,22 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
             st.markdown(f"""<div style="background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;padding:14px 16px;margin-bottom:12px;">
   <div style="font-size:10px;font-weight:700;color:#5a8aaa;text-transform:uppercase;letter-spacing:1px;margin-bottom:10px;">Career Stages Explained</div>
   <div class="ef-summary-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
-    <div style="background:#0d1b2a;border:1px solid #14532d;border-top:3px solid #22c55e;border-radius:8px;padding:10px 12px;">
+    <div style="background:{C.bg_dark};border:1px solid #14532d;border-top:3px solid #22c55e;border-radius:8px;padding:10px 12px;">
       <div style="font-size:13px;font-weight:700;color:#22c55e;margin-bottom:4px;">Pre-Arbitration</div>
-      <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">0\u20133 years service time. Salary near league minimum (~$740K). Teams control rights \u2014 often the best value in baseball.</div>
+      <div style="font-size:10px;color:{C.text_muted};line-height:1.5;">0\u20133 years service time. Salary near league minimum (~$740K). Teams control rights \u2014 often the best value in baseball.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #14b8a6;border-top:3px solid #14b8a6;border-radius:8px;padding:10px 12px;">
+    <div style="background:{C.bg_dark};border:1px solid #14b8a6;border-top:3px solid #14b8a6;border-radius:8px;padding:10px 12px;">
       <div style="font-size:13px;font-weight:700;color:#14b8a6;margin-bottom:4px;">Arbitration</div>
-      <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">3\u20136 years service time. Salary negotiated or set by arbitration hearing. Pay rises based on prior performance.</div>
+      <div style="font-size:10px;color:{C.text_muted};line-height:1.5;">3\u20136 years service time. Salary negotiated or set by arbitration hearing. Pay rises based on prior performance.</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #3b6fd4;border-top:3px solid #60a5fa;border-radius:8px;padding:10px 12px;">
+    <div style="background:{C.bg_dark};border:1px solid {C.accent_blue};border-top:3px solid #60a5fa;border-radius:8px;padding:10px 12px;">
       <div style="font-size:13px;font-weight:700;color:#60a5fa;margin-bottom:4px;">Free Agent</div>
-      <div style="font-size:10px;color:#7a9ebc;line-height:1.5;">6+ years service time. Player signs on the open market. Full market-rate salary \u2014 highest cost per WAR.</div>
+      <div style="font-size:10px;color:{C.text_muted};line-height:1.5;">6+ years service time. Player signs on the open market. Full market-rate salary \u2014 highest cost per WAR.</div>
     </div>
   </div>
   <div style="display:flex;gap:16px;margin-top:10px;">
-    <div style="font-size:10px;color:#7a9ebc;"><span style="color:#22c55e;font-weight:700;">{_underpaid_n}</span> underpaid / <span style="color:#ef4444;font-weight:700;">{_overpaid_n}</span> overpaid (PPR vs 1.0)</div>
-    <div style="font-size:10px;color:#7a9ebc;">{_r2_txt} \u00b7 {_reg_method} \u00b7 N={_n_shown:,}</div>
+    <div style="font-size:10px;color:{C.text_muted};"><span style="color:#22c55e;font-weight:700;">{_underpaid_n}</span> underpaid / <span style="color:#ef4444;font-weight:700;">{_overpaid_n}</span> overpaid (PPR vs 1.0)</div>
+    <div style="font-size:10px;color:{C.text_muted};">{_r2_txt} \u00b7 {_reg_method} \u00b7 N={_n_shown:,}</div>
   </div>
 </div>""", unsafe_allow_html=True)
 
@@ -606,23 +609,23 @@ justify-content:space-between;gap:16px;flex-wrap:wrap;">
   <div style="font-size:17px;font-weight:800;color:#e8f4ff;margin-bottom:3px;">{_pr['Player']}</div>
   <div style="font-size:12px;color:#6a9ab8;margin-bottom:8px;">{_pr['Team']} &middot; {int(_pr['Year'])} &middot; {_pr['Stage_Clean']} &middot; Age {_age_disp}</div>
   <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">WAR</div>
       <div style="font-size:15px;font-weight:700;color:#e8f4ff;">{_pr['WAR_Total']:.1f}</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">Salary</div>
       <div style="font-size:15px;font-weight:700;color:#e8f4ff;">${_pr['Salary_M']:.1f}M</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">Expected</div>
       <div style="font-size:15px;font-weight:700;color:#e8f4ff;">${_pr['predicted']:.1f}M</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">PPR</div>
       <div style="font-size:15px;font-weight:700;color:{_ppr_clr};">{_pr['PPR']:.3f}</div>
     </div>
-    <div style="background:#0d1b2a;border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
+    <div style="background:{C.bg_dark};border:1px solid #1e3a5c;border-radius:6px;padding:7px 10px;text-align:center;">
       <div style="font-size:9px;color:#4a7a9b;text-transform:uppercase;letter-spacing:.8px;margin-bottom:2px;">vs Market</div>
       <div style="font-size:15px;font-weight:700;color:{_res_clr};">{_res_sgn}${abs(_pr['residual']):.1f}M</div>
     </div>
@@ -689,9 +692,9 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
 
             # -- Top 25 Most Underpaid Players (auto-adjusts with filters) -----
             st.markdown(
-                "<div style='margin-top:1rem;font-size:0.92rem;font-weight:700;color:#d6e8f8;'>"
+                f"<div style='margin-top:1rem;font-size:0.92rem;font-weight:700;color:{C.text_primary};'>"
                 "Top 25 Most Underpaid Players</div>"
-                "<div style='font-size:0.76rem;color:#7a9ebc;margin-bottom:0.4rem;'>"
+                f"<div style='font-size:0.76rem;color:{C.text_muted};margin-bottom:0.4rem;'>"
                 "Ranked by PPR (lowest = most underpaid). Adjusts with all filters above. Excludes Pre-Arbitration players and players under 1 fWAR.</div>",
                 unsafe_allow_html=True,
             )
@@ -713,8 +716,8 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
             st.markdown(
                 "<div style='background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;"
                 "padding:14px 18px;margin-bottom:12px;'>"
-                "<div style='font-size:1rem;font-weight:700;color:#d6e8f8;margin-bottom:6px;'>Age Trajectory</div>"
-                "<div style='font-size:0.85rem;color:#93b8d8;line-height:1.7;'>"
+                f"<div style='font-size:1rem;font-weight:700;color:{C.text_primary};margin-bottom:6px;'>Age Trajectory</div>"
+                f"<div style='font-size:0.85rem;color:{C.text_secondary};line-height:1.7;'>"
                 "See how player production changes as they age. Most players peak in their late 20s "
                 "and decline into their 30s \u2014 but the shape varies by position and player type.<br><br>"
                 "<b>How to read it:</b> The line shows the <b>average</b> metric at each age across all "
@@ -774,9 +777,9 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
 
             # -- Top 25 Standouts by age efficiency ----------------------------
             st.markdown(
-                "<div style='margin-top:1rem;font-size:0.92rem;font-weight:700;color:#d6e8f8;'>"
+                f"<div style='margin-top:1rem;font-size:0.92rem;font-weight:700;color:{C.text_primary};'>"
                 "Top 25 Standouts \u2014 Best Value by Age</div>"
-                "<div style='font-size:0.76rem;color:#7a9ebc;margin-bottom:0.4rem;'>"
+                f"<div style='font-size:0.76rem;color:{C.text_muted};margin-bottom:0.4rem;'>"
                 "Highest fWAR per $M among filtered players. Adjusts with all filters above.</div>",
                 unsafe_allow_html=True,
             )
@@ -874,8 +877,8 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
             st.markdown(
                 "<div style='background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;"
                 "padding:14px 18px;margin-bottom:12px;'>"
-                "<div style='font-size:1rem;font-weight:700;color:#d6e8f8;margin-bottom:6px;'>PPEL \u2014 Multi-Year Value Analysis</div>"
-                "<div style='font-size:0.85rem;color:#93b8d8;line-height:1.7;'>"
+                f"<div style='font-size:1rem;font-weight:700;color:{C.text_primary};margin-bottom:6px;'>PPEL \u2014 Multi-Year Value Analysis</div>"
+                f"<div style='font-size:0.85rem;color:{C.text_secondary};line-height:1.7;'>"
                 "This view extends the Cost Effective Line across <b>multiple seasons</b> to separate "
                 "one-year flukes from sustained performance. Use the toggle to switch between 1-year, "
                 "3-year, and 5-year windows.<br><br>"
@@ -1176,8 +1179,8 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                         yaxis=dict(title="5-Year Total Salary ($M)"),
                         height=640, showlegend=True,
                         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
-                        hoverlabel=dict(bgcolor="#18243a", bordercolor="#253d58",
-                                        font=dict(color="#d6e8f8", size=12), namelength=-1),
+                        hoverlabel=dict(bgcolor=C.bg_card_surface, bordercolor=C.border_accent,
+                                        font=dict(color=C.text_primary, size=12), namelength=-1),
                     ))
                     st.plotly_chart(fig_p5, width="stretch")
 
@@ -1193,7 +1196,7 @@ padding:9px 16px;margin-top:6px;display:flex;gap:20px;align-items:center;flex-wr
                         marker=dict(color=["#22c55e" if v else "#ef4444"
                                            for v in (_p5_ranked["_above5"])]),
                         text=_p5_ranked["PVP5"].round(3).astype(str),
-                        textposition="outside", textfont=dict(color="#d6e8f8", size=9),
+                        textposition="outside", textfont=dict(color=C.text_primary, size=9),
                         hovertemplate=(
                             "%{y}<br>PPEL5: %{x:.3f}<br>"
                             "5yr WAR: " + _p5_ranked["WAR5"].round(1).astype(str)
@@ -1405,8 +1408,8 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
             st.markdown(
                 "<div style='background:#090f1a;border:1px solid #1e3a5c;border-radius:10px;"
                 "padding:14px 18px;margin-bottom:12px;'>"
-                "<div style='font-size:1rem;font-weight:700;color:#d6e8f8;margin-bottom:6px;'>fWAR Stability Rating (WSR)</div>"
-                "<div style='font-size:0.85rem;color:#93b8d8;line-height:1.7;'>"
+                f"<div style='font-size:1rem;font-weight:700;color:{C.text_primary};margin-bottom:6px;'>fWAR Stability Rating (WSR)</div>"
+                f"<div style='font-size:0.85rem;color:{C.text_secondary};line-height:1.7;'>"
                 "Not all high-fWAR players are equally reliable. This chart plots each player's "
                 "<b>average fWAR</b> (X-axis) against their <b>standard deviation</b> (Y-axis) \u2014 "
                 "a measure of how much their production swings from year to year.<br><br>"
@@ -1486,7 +1489,7 @@ display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">
                     (_xm * 0.3, _ym * 0.3, "Consistent Depth"),
                 ]:
                     fig_wsr.add_annotation(x=_ax, y=_ay, text=_atxt,
-                                           showarrow=False, font=dict(color="#4a687e", size=10), opacity=0.6)
+                                           showarrow=False, font=dict(color=C.text_dim, size=10), opacity=0.6)
 
                 fig_wsr.update_layout(**_pt(
                     title="WAR Stability \u2014 Mean WAR vs Standard Deviation",
