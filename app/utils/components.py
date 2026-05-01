@@ -2,6 +2,8 @@
 
 import streamlit as st
 
+from utils.constants import C
+
 
 def render_feedback_widget(page_name: str = "") -> None:
     """Render a shared feedback/suggestion widget at the bottom of every page."""
@@ -31,11 +33,11 @@ def render_glossary(
         for i, (abbr, fullname, desc) in enumerate(terms):
             with _gcols[i % cols]:
                 st.markdown(
-                    f"<div style='background:#0d1e35;border-left:3px solid #2b5cc8;"
+                    f"<div style='background:{C.bg_dark};border-left:3px solid #2b5cc8;"
                     f"border-radius:0 8px 8px 0;padding:0.5rem 0.85rem;margin-bottom:0.45rem;'>"
                     f"<span style='font-size:0.8rem;font-weight:700;color:#93c5fd;'>{abbr}</span>"
-                    f"<span style='font-size:0.76rem;color:#93b8d8;'> — {fullname}</span>"
-                    f"<div style='font-size:0.72rem;color:#7a9ebc;margin-top:0.15rem;line-height:1.5;'>{desc}</div>"
+                    f"<span style='font-size:0.76rem;color:{C.text_secondary};'> — {fullname}</span>"
+                    f"<div style='font-size:0.72rem;color:{C.text_muted};margin-top:0.15rem;line-height:1.5;'>{desc}</div>"
                     f"</div>",
                     unsafe_allow_html=True,
                 )

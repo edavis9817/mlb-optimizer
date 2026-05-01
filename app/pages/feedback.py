@@ -5,6 +5,8 @@ import threading
 import streamlit as st
 import streamlit.components.v1 as _stc
 
+from utils.constants import C
+
 try:
     import requests as _requests
     _requests_available = True
@@ -23,7 +25,7 @@ def render():
     </style>""", unsafe_allow_html=True)
     st.markdown(
         "<h2 style='margin-bottom:0.3rem;'>💬 Feedback & Suggestions</h2>"
-        "<p style='color:#93b8d8;font-size:0.88rem;margin-bottom:1.2rem;'>"
+        f"<p style='color:{C.text_secondary};font-size:0.88rem;margin-bottom:1.2rem;'>"
         "Help us improve MLB Toolbox. Your feedback shapes what we build next.</p>",
         unsafe_allow_html=True,
     )
@@ -101,9 +103,9 @@ def render():
 
     st.markdown("---")
     st.markdown(
-        "<div style='background:#0d1e35;border:1px solid #1e3250;border-radius:8px;"
-        "padding:1rem 1.2rem;font-size:0.82rem;color:#7a9ebc;line-height:1.7;'>"
-        "<b style='color:#d6e8f8;'>What happens with your feedback?</b><br>"
+        f"<div style='background:{C.bg_dark};border:1px solid {C.border_primary};border-radius:8px;"
+        f"padding:1rem 1.2rem;font-size:0.82rem;color:{C.text_muted};line-height:1.7;'>"
+        f"<b style='color:{C.text_primary};'>What happens with your feedback?</b><br>"
         "Every submission is reviewed by the MLB Toolbox team. Feature requests are "
         "prioritized based on community demand. Bug reports are triaged and fixed in "
         "order of severity. Data issues are verified against our sources and corrected. "

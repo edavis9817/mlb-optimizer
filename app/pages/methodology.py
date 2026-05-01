@@ -6,6 +6,7 @@ from utils.components import (
     render_feedback_widget as _render_feedback_widget,
     render_glossary as _render_glossary,
 )
+from utils.constants import C
 
 
 def render():
@@ -13,7 +14,7 @@ def render():
 
     st.markdown(
         "<h1 style='margin-bottom:0.1rem;'>📖 Methodology & Data Sources</h1>"
-        "<p style='color:#4a687e;font-size:0.82rem;margin-bottom:1.5rem;'>"
+        f"<p style='color:{C.text_dim};font-size:0.82rem;margin-bottom:1.5rem;'>"
         "Every metric, formula, and term used across the MLB Toolbox — explained in one place.</p>",
         unsafe_allow_html=True,
     )
@@ -22,9 +23,9 @@ def render():
     def _section(num: int, title: str):
         st.markdown(
             f"<div style='margin:1.8rem 0 0.6rem;padding:0.5rem 0.8rem;"
-            f"border-left:3px solid #2b5cc8;background:#0d1e35;border-radius:0 8px 8px 0;'>"
-            f"<span style='font-size:0.7rem;color:#3b6fd4;font-weight:700;'>SECTION {num}</span>"
-            f"<div style='font-size:1.05rem;font-weight:700;color:#d6e8f8;'>{title}</div>"
+            f"border-left:3px solid #2b5cc8;background:{C.bg_dark};border-radius:0 8px 8px 0;'>"
+            f"<span style='font-size:0.7rem;color:{C.accent_blue};font-weight:700;'>SECTION {num}</span>"
+            f"<div style='font-size:1.05rem;font-weight:700;color:{C.text_primary};'>{title}</div>"
             f"</div>",
             unsafe_allow_html=True,
         )
@@ -95,7 +96,7 @@ def render():
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(
-            "<div style='font-size:0.75rem;font-weight:600;color:#d6e8f8;margin-bottom:0.3rem;'>"
+            f"<div style='font-size:0.75rem;font-weight:600;color:{C.text_primary};margin-bottom:0.3rem;'>"
             "Position Players</div>",
             unsafe_allow_html=True,
         )
@@ -111,7 +112,7 @@ def render():
         )
     with c2:
         st.markdown(
-            "<div style='font-size:0.75rem;font-weight:600;color:#d6e8f8;margin-bottom:0.3rem;'>"
+            f"<div style='font-size:0.75rem;font-weight:600;color:{C.text_primary};margin-bottom:0.3rem;'>"
             "Pitchers (FIP-based)</div>",
             unsafe_allow_html=True,
         )
@@ -127,9 +128,9 @@ def render():
 
     # ── fWAR context: what the numbers mean ─────────────────────────────
     st.markdown(
-        "<div style='background:#0d1e35;border:1px solid #1e3250;border-radius:8px;"
-        "padding:1rem 1.2rem;margin:0.8rem 0 1.2rem;font-size:0.82rem;color:#93b8d8;line-height:1.8;'>"
-        "<b style='color:#d6e8f8;font-size:0.9rem;'>Understanding fWAR in Context</b><br><br>"
+        f"<div style='background:{C.bg_dark};border:1px solid {C.border_primary};border-radius:8px;"
+        f"padding:1rem 1.2rem;margin:0.8rem 0 1.2rem;font-size:0.82rem;color:{C.text_secondary};line-height:1.8;'>"
+        f"<b style='color:{C.text_primary};font-size:0.9rem;'>Understanding fWAR in Context</b><br><br>"
         "WAR estimates a player's value in terms of extra wins they provide compared to a "
         "replacement-level player — essentially a low-cost minor leaguer or bench player easily "
         "found to fill the same position. MLB Toolbox uses fWAR, a widely accepted version "
@@ -272,7 +273,7 @@ def render():
     _section(4, "Roster Grade System")
 
     st.markdown(
-        "<p style='color:#7a9ebc;font-size:0.76rem;margin-bottom:0.8rem;'>"
+        f"<p style='color:{C.text_muted};font-size:0.76rem;margin-bottom:0.8rem;'>"
         "Every simulated roster receives four letter grades (A+ through F) across "
         "these dimensions:</p>",
         unsafe_allow_html=True,
@@ -317,11 +318,11 @@ def render():
                 "C": "#facc15", "D": "#f97316", "F": "#ef4444",
             }[grade]
             st.markdown(
-                f"<div style='text-align:center;background:#0d1e35;border:1px solid #1e3250;"
+                f"<div style='text-align:center;background:{C.bg_dark};border:1px solid {C.border_primary};"
                 f"border-radius:8px;padding:0.5rem 0.3rem;'>"
                 f"<div style='font-size:1.3rem;font-weight:900;color:{_color};'>{grade}</div>"
-                f"<div style='font-size:0.65rem;color:#7a9ebc;'>{pct}</div>"
-                f"<div style='font-size:0.58rem;color:#4a687e;margin-top:0.2rem;'>{desc}</div>"
+                f"<div style='font-size:0.65rem;color:{C.text_muted};'>{pct}</div>"
+                f"<div style='font-size:0.58rem;color:{C.text_dim};margin-top:0.2rem;'>{desc}</div>"
                 f"</div>",
                 unsafe_allow_html=True,
             )
@@ -336,30 +337,30 @@ def render():
     ex1, ex2 = st.columns(2)
     with ex1:
         st.markdown(
-            "<div style='background:#0d1e35;border:1px solid #22c55e;border-radius:8px;"
-            "padding:0.6rem 0.8rem;'>"
-            "<div style='font-size:0.8rem;font-weight:700;color:#22c55e;margin-bottom:0.3rem;'>"
-            "A+ Roster Example</div>"
-            "<div style='font-size:0.75rem;color:#93b8d8;line-height:1.7;'>"
-            "<b style='color:#d6e8f8;'>Production:</b> ~33+ WAR (≥95% of 35 ceiling)<br>"
-            "<b style='color:#d6e8f8;'>Efficiency:</b> WAR/$M well above 0.30 baseline<br>"
-            "<b style='color:#d6e8f8;'>Depth:</b> All 9 position groups filled<br>"
-            "<b style='color:#d6e8f8;'>Contract Health:</b> ~2.0 avg years remaining"
-            "</div></div>",
+            f"<div style='background:{C.bg_dark};border:1px solid #22c55e;border-radius:8px;"
+            f"padding:0.6rem 0.8rem;'>"
+            f"<div style='font-size:0.8rem;font-weight:700;color:#22c55e;margin-bottom:0.3rem;'>"
+            f"A+ Roster Example</div>"
+            f"<div style='font-size:0.75rem;color:{C.text_secondary};line-height:1.7;'>"
+            f"<b style='color:{C.text_primary};'>Production:</b> ~33+ WAR (≥95% of 35 ceiling)<br>"
+            f"<b style='color:{C.text_primary};'>Efficiency:</b> WAR/$M well above 0.30 baseline<br>"
+            f"<b style='color:{C.text_primary};'>Depth:</b> All 9 position groups filled<br>"
+            f"<b style='color:{C.text_primary};'>Contract Health:</b> ~2.0 avg years remaining"
+            f"</div></div>",
             unsafe_allow_html=True,
         )
     with ex2:
         st.markdown(
-            "<div style='background:#0d1e35;border:1px solid #facc15;border-radius:8px;"
-            "padding:0.6rem 0.8rem;'>"
-            "<div style='font-size:0.8rem;font-weight:700;color:#facc15;margin-bottom:0.3rem;'>"
-            "C Roster Example</div>"
-            "<div style='font-size:0.75rem;color:#93b8d8;line-height:1.7;'>"
-            "<b style='color:#d6e8f8;'>Production:</b> ~19-20 WAR (55-60% of ceiling)<br>"
-            "<b style='color:#d6e8f8;'>Efficiency:</b> WAR/$M near or below 0.30<br>"
-            "<b style='color:#d6e8f8;'>Depth:</b> 5-6 of 9 groups filled, gaps at key spots<br>"
-            "<b style='color:#d6e8f8;'>Contract Health:</b> Skewed toward all expiring or all long-term"
-            "</div></div>",
+            f"<div style='background:{C.bg_dark};border:1px solid #facc15;border-radius:8px;"
+            f"padding:0.6rem 0.8rem;'>"
+            f"<div style='font-size:0.8rem;font-weight:700;color:#facc15;margin-bottom:0.3rem;'>"
+            f"C Roster Example</div>"
+            f"<div style='font-size:0.75rem;color:{C.text_secondary};line-height:1.7;'>"
+            f"<b style='color:{C.text_primary};'>Production:</b> ~19-20 WAR (55-60% of ceiling)<br>"
+            f"<b style='color:{C.text_primary};'>Efficiency:</b> WAR/$M near or below 0.30<br>"
+            f"<b style='color:{C.text_primary};'>Depth:</b> 5-6 of 9 groups filled, gaps at key spots<br>"
+            f"<b style='color:{C.text_primary};'>Contract Health:</b> Skewed toward all expiring or all long-term"
+            f"</div></div>",
             unsafe_allow_html=True,
         )
 
@@ -369,9 +370,9 @@ def render():
     _section(5, "Data Sources & Methodology")
 
     st.markdown(
-        "<div style='background:#0d1e35;border:1px solid #1e3250;border-radius:8px;"
-        "padding:1rem 1.2rem;font-size:0.76rem;color:#7a9ebc;line-height:1.8;'>"
-        "<b style='color:#d6e8f8;font-size:0.82rem;'>Where the data comes from</b><br><br>"
+        f"<div style='background:{C.bg_dark};border:1px solid {C.border_primary};border-radius:8px;"
+        f"padding:1rem 1.2rem;font-size:0.76rem;color:{C.text_muted};line-height:1.8;'>"
+        f"<b style='color:{C.text_primary};font-size:0.82rem;'>Where the data comes from</b><br><br>"
         "<b style='color:#93c5fd;'>WAR & Performance Data:</b> "
         "All WAR figures use FanGraphs fWAR, covering the 2021–2025 MLB seasons. "
         "Pitchers are evaluated via FIP-based WAR; position players use the full "
